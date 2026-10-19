@@ -1,5 +1,9 @@
 # Descifra
 
+**[Jugar ahora →](https://carlos-vi.github.io/Descifra-game/)**
+
+![Pantalla de inicio de Descifra](docs/screenshots/inicio.png)
+
 **Descifra** es un juego de lógica en el navegador en el que hay que descifrar lenguas
 y escrituras que nunca has visto. Cada nivel presenta unas frases de ejemplo con su
 traducción; a partir de ellas hay que deducir el vocabulario y la gramática, y
@@ -14,6 +18,7 @@ sección para aprender sobre ellos con ejemplos reales.
 
 - [Cómo se juega](#cómo-se-juega)
 - [Modos de juego](#modos-de-juego)
+- [Capturas](#capturas)
 - [Niveles](#niveles)
 - [Sección Aprende](#sección-aprende)
 - [Ejecutar el juego](#ejecutar-el-juego)
@@ -21,7 +26,9 @@ sección para aprender sobre ellos con ejemplos reales.
 - [Cómo está hecho](#cómo-está-hecho)
 - [Añadir contenido](#añadir-contenido)
 - [Tests](#tests)
-- [Publicar en GitHub Pages](#publicar-en-github-pages)
+- [Despliegue](#despliegue)
+- [Sobre las lenguas del juego](#sobre-las-lenguas-del-juego)
+- [Licencia](#licencia)
 
 ## Cómo se juega
 
@@ -77,39 +84,68 @@ diarios, dos por cada día de la semana, que se van turnando.
 29 niveles organizados en ocho categorías, cada uno con una dificultad de 1 a 5.
 Se pueden jugar en cualquier orden y reiniciar cuando se quiera.
 
+## Capturas
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/nivel.png" alt="Un nivel en curso: las fichas se colorean tras cada intento"></td>
+    <td width="50%"><img src="docs/screenshots/escritura.png" alt="Nivel de escritura silábica con nombres en cartuchos"></td>
+  </tr>
+  <tr>
+    <td><b>Un nivel en curso.</b> Tras cada intento, las fichas se colorean; en los retos «pieza a pieza» se ve cómo se lee lo que vas construyendo.</td>
+    <td><b>Escrituras.</b> Sílabas dentro de cartuchos que se leen de derecha a izquierda, como en el método de Champollion.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/olimpiada.png" alt="Nivel de Olimpiada: emparejar traducciones desordenadas"></td>
+    <td><img src="docs/screenshots/reto-diario.png" alt="Resultado del reto diario con estadísticas y texto para compartir"></td>
+  </tr>
+  <tr>
+    <td><b>Olimpiada.</b> Primero hay que emparejar las frases con sus traducciones desordenadas.</td>
+    <td><b>Reto diario.</b> Estadísticas, racha y un resumen para compartir sin desvelar la solución.</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/aprende.png" alt="Artículo de la sección Aprende sobre la ergatividad"></td>
+    <td align="center"><img src="docs/screenshots/movil-inicio.png" alt="Inicio en el móvil, tema oscuro" width="45%"> <img src="docs/screenshots/movil-nivel.png" alt="Nivel de braille en el móvil, tema oscuro" width="45%"></td>
+  </tr>
+  <tr>
+    <td><b>Aprende.</b> Artículos con ejemplos de lenguas reales analizados palabra a palabra.</td>
+    <td><b>En el móvil</b>, con tema claro u oscuro según el sistema.</td>
+  </tr>
+</table>
+
 ## Niveles
 
 | Categoría | Nivel | Dificultad | Inspirado en |
 |---|---|:-:|---|
-| **Primeros pasos** | Primeras palabras | ●○○○○ | Lenguas sin artículos (ruso, chino, japonés) |
-| | Más de uno | ●○○○○ | Plural con sufijo (turco, húngaro) |
-| | El verbo al final | ●●○○○ | Orden sujeto-objeto-verbo (japonés, turco, euskera) |
-| | Ayer y mañana | ●●○○○ | Tiempo con palabras sueltas (vietnamita, indonesio) |
-| | La gran prueba | ●●●○○ | Adjetivo delante y verbo al final (japonés, turco) |
-| **Frases** | ¿Sí o no? | ●●○○○ | Responder repitiendo el verbo (irlandés, finés) |
-| | Quien hace y quien sufre | ●●●○○ | Ergatividad (euskera) |
-| | Todo concuerda | ●●●○○ | Clases nominales (suajili) |
-| | Yo te veo | ●●●●○ | Verbos con sujeto y objeto (suajili, náhuatl) |
-| **Piezas de palabras** | Uno, dos, muchos | ●●○○○ | Número dual (esloveno, árabe, inuktitut) |
-| | Piezas por dentro | ●●●○○ | Infijos y reduplicación (tagalo) |
-| | Dicen que… | ●●●●○ | Evidencialidad y posesión (quechua, húngaro) |
-| | Tres consonantes | ●●●●○ | Raíces de tres consonantes (árabe, hebreo) |
-| **Significado** | Palabras que se juntan | ●●○○○ | Compuestos y kennings (alemán, chino) |
-| | Contar cosas | ●●○○○ | Clasificadores (japonés, chino) |
-| | Sin izquierda ni derecha | ●●●○○ | Direcciones absolutas (guugu yimithirr) |
-| | La familia de Ana | ●●●●○ | Parentesco iroqués |
-| **Sonidos** | Las vocales mandan | ●●○○○ | Armonía vocálica (turco, finés) |
-| | Cantar las palabras | ●●●○○ | Tonos (chino mandarín, yoruba) |
-| | Lenguas hermanas | ●●●●○ | Cambios fonéticos regulares (latín → español, ley de Grimm) |
-| **Números** | Puntos y barras | ●●○○○ | Numeración maya (base 20) |
-| | Contar restando | ●●●●○ | Números que restan (yoruba, latín) |
-| | Cuentas antiguas | ●●●●● | Base 6 (ndom), con traducciones desordenadas |
-| **Escrituras** | Un alfabeto nuevo | ●○○○○ | Alfabeto rúnico, cifrado por sustitución |
-| | Puntos en relieve | ●●○○○ | Braille |
-| | Nombres en cartuchos | ●●●●○ | Champollion y los silabarios (se lee de derecha a izquierda) |
-| | Dibujos que suenan | ●●●●● | Jeroglíficos egipcios con determinativos |
-| **Olimpiada** | Tú y yo | ●●●●● | «Nosotros» inclusivo y exclusivo (indonesio, quechua) |
-| | Las huellas del río | ●●●●● | Ergatividad del dyirbal |
+| **Primeros pasos** | Primeras palabras | <img src="docs/difficulty/1.svg" alt="Dificultad 1 de 5" title="Dificultad 1 de 5"> | Lenguas sin artículos (ruso, chino, japonés) |
+| | Más de uno | <img src="docs/difficulty/1.svg" alt="Dificultad 1 de 5" title="Dificultad 1 de 5"> | Plural con sufijo (turco, húngaro) |
+| | El verbo al final | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Orden sujeto-objeto-verbo (japonés, turco, euskera) |
+| | Ayer y mañana | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Tiempo con palabras sueltas (vietnamita, indonesio) |
+| | La gran prueba | <img src="docs/difficulty/3.svg" alt="Dificultad 3 de 5" title="Dificultad 3 de 5"> | Adjetivo delante y verbo al final (japonés, turco) |
+| **Frases** | ¿Sí o no? | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Responder repitiendo el verbo (irlandés, finés) |
+| | Quien hace y quien sufre | <img src="docs/difficulty/3.svg" alt="Dificultad 3 de 5" title="Dificultad 3 de 5"> | Ergatividad (euskera) |
+| | Todo concuerda | <img src="docs/difficulty/3.svg" alt="Dificultad 3 de 5" title="Dificultad 3 de 5"> | Clases nominales (suajili) |
+| | Yo te veo | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Verbos con sujeto y objeto (suajili, náhuatl) |
+| **Piezas de palabras** | Uno, dos, muchos | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Número dual (esloveno, árabe, inuktitut) |
+| | Piezas por dentro | <img src="docs/difficulty/3.svg" alt="Dificultad 3 de 5" title="Dificultad 3 de 5"> | Infijos y reduplicación (tagalo) |
+| | Dicen que… | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Evidencialidad y posesión (quechua, húngaro) |
+| | Tres consonantes | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Raíces de tres consonantes (árabe, hebreo) |
+| **Significado** | Palabras que se juntan | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Compuestos y kennings (alemán, chino) |
+| | Contar cosas | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Clasificadores (japonés, chino) |
+| | Sin izquierda ni derecha | <img src="docs/difficulty/3.svg" alt="Dificultad 3 de 5" title="Dificultad 3 de 5"> | Direcciones absolutas (guugu yimithirr) |
+| | La familia de Ana | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Parentesco iroqués |
+| **Sonidos** | Las vocales mandan | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Armonía vocálica (turco, finés) |
+| | Cantar las palabras | <img src="docs/difficulty/3.svg" alt="Dificultad 3 de 5" title="Dificultad 3 de 5"> | Tonos (chino mandarín, yoruba) |
+| | Lenguas hermanas | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Cambios fonéticos regulares (latín → español, ley de Grimm) |
+| **Números** | Puntos y barras | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Numeración maya (base 20) |
+| | Contar restando | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Números que restan (yoruba, latín) |
+| | Cuentas antiguas | <img src="docs/difficulty/5.svg" alt="Dificultad 5 de 5" title="Dificultad 5 de 5"> | Base 6 (ndom), con traducciones desordenadas |
+| **Escrituras** | Un alfabeto nuevo | <img src="docs/difficulty/1.svg" alt="Dificultad 1 de 5" title="Dificultad 1 de 5"> | Alfabeto rúnico, cifrado por sustitución |
+| | Puntos en relieve | <img src="docs/difficulty/2.svg" alt="Dificultad 2 de 5" title="Dificultad 2 de 5"> | Braille |
+| | Nombres en cartuchos | <img src="docs/difficulty/4.svg" alt="Dificultad 4 de 5" title="Dificultad 4 de 5"> | Champollion y los silabarios (se lee de derecha a izquierda) |
+| | Dibujos que suenan | <img src="docs/difficulty/5.svg" alt="Dificultad 5 de 5" title="Dificultad 5 de 5"> | Jeroglíficos egipcios con determinativos |
+| **Olimpiada** | Tú y yo | <img src="docs/difficulty/5.svg" alt="Dificultad 5 de 5" title="Dificultad 5 de 5"> | «Nosotros» inclusivo y exclusivo (indonesio, quechua) |
+| | Las huellas del río | <img src="docs/difficulty/5.svg" alt="Dificultad 5 de 5" title="Dificultad 5 de 5"> | Ergatividad del dyirbal |
 
 ## Sección Aprende
 
@@ -129,7 +165,15 @@ directamente el artículo cuando existe.
 
 ## Ejecutar el juego
 
-No necesita instalación ni compilación: es HTML, CSS y JavaScript sin dependencias.
+La forma más rápida de jugar es la versión publicada: **https://carlos-vi.github.io/Descifra-game/**
+
+Para ejecutarlo en tu ordenador no hace falta instalar nada: es HTML, CSS y JavaScript
+sin dependencias.
+
+```
+git clone https://github.com/carlos-vi/Descifra-game.git
+cd Descifra-game
+```
 
 - **La forma más sencilla:** abre `index.html` con doble clic en cualquier navegador.
 - **Con un servidor local** (útil durante el desarrollo):
@@ -252,11 +296,23 @@ También comprueban que las reglas de los niveles con lógica propia (números m
 base 6 y con restas, cambios de sonido, puntos cardinales y braille) se cumplen en
 todas sus frases, y que cada artículo y cada enlace están completos.
 
-## Publicar en GitHub Pages
+## Despliegue
 
-Como es una web estática, se puede publicar gratis en GitHub Pages:
+El juego está publicado con GitHub Pages en **https://carlos-vi.github.io/Descifra-game/**, a partir de la rama `main`
+(carpeta raíz). Como es una web estática, cada cambio que llega a `main` se publica
+solo en unos minutos; no hay ningún paso de compilación.
 
-1. En el repositorio de GitHub, ve a **Settings → Pages**.
-2. En **Build and deployment**, elige **Deploy from a branch**.
-3. Selecciona la rama (por ejemplo, `main`) y la carpeta `/ (root)`, y pulsa **Save**.
-4. En unos minutos el juego estará en `https://<usuario>.github.io/decoding-languages-game/`.
+Para publicar una copia propia: **Settings → Pages → Deploy from a branch**, elige la
+rama `main` y la carpeta `/ (root)`, y guarda.
+
+## Sobre las lenguas del juego
+
+Las lenguas y escrituras de los niveles son inventadas, pero cada una reproduce, de forma
+simplificada, fenómenos de lenguas reales. Cada nivel indica en qué se inspira y enlaza a
+más información. Los ejemplos de lenguas reales de la sección Aprende están simplificados
+para que se entiendan sin formación previa en lingüística.
+
+## Licencia
+
+Publicado con la [licencia MIT](LICENSE): puedes usar, copiar, modificar y
+distribuir el código libremente, siempre que conserves el aviso de copyright.
