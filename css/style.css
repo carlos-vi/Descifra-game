@@ -746,50 +746,52 @@ button:disabled {
 
 /* ---------- Aprende ---------- */
 
-.learn .lead,
-.learn-article > .lead {
+.learn {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.learn .lead {
   max-width: 68ch;
 }
 
-.article-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
-  gap: 20px 40px;
-  align-items: start;
-  margin-top: 12px;
+/* Artículos: una columna centrada con un ancho cómodo de lectura. */
+.learn-article {
+  max-width: 720px;
+  margin: 0 auto;
 }
 
-.article-aside {
-  position: sticky;
-  top: calc(env(safe-area-inset-top, 0px) + 76px);
-  padding: 4px 20px 20px;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+.learn-article .article-text {
+  font-size: 1.06rem;
+  line-height: 1.7;
+  margin: 0 0 1em;
 }
 
-.article-aside .section-title {
-  margin-top: 20px;
+@media (min-width: 700px) {
+  .learn-article .article-text {
+    text-align: justify;
+    hyphens: auto;
+  }
 }
 
-.article-aside .level-list {
-  grid-template-columns: minmax(0, 1fr);
+.learn-article .lead {
+  font-size: 1.15rem;
+  color: var(--muted);
+  margin-bottom: 28px;
 }
 
-.article-aside .level-card {
-  box-shadow: none;
+.article-footer {
+  margin-top: 36px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
+.article-footer .level-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+.article-footer .level-card {
   padding: 10px 12px;
-}
-
-@media (max-width: 900px) {
-  .article-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .article-aside {
-    position: static;
-  }
 }
 
 .article-list {
@@ -824,9 +826,7 @@ button:disabled {
   font-size: 0.95rem;
 }
 
-.article-text {
-  max-width: 68ch;
-}
+
 
 .back-link {
   display: inline-flex;
@@ -839,8 +839,6 @@ button:disabled {
 .examples {
   display: grid;
   gap: 12px;
-  align-items: start;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
 }
 
 .example {

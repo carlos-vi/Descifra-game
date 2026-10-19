@@ -486,28 +486,24 @@
     const levels = levelsForTopic(a.id);
     const next = ARTICLES[ARTICLES.indexOf(a) + 1];
     app.replaceChildren(
-      el('article', { class: 'learn-article' }, [
+      el('article', { class: 'learn-article', lang: 'es' }, [
         el('a', { class: 'back-link', href: '#aprende' }, [svgIcon(ICONS.back, 'small'), document.createTextNode('Todos los temas')]),
         el('h2', { class: 'page-title', text: a.title }),
         el('p', { class: 'lead', text: a.summary }),
-        // En el ordenador, el texto y los ejemplos a la izquierda y el resto en una columna lateral.
-        el('div', { class: 'article-layout' }, [
-          el('div', { class: 'article-main' }, [
-            ...a.paragraphs.map((p) => el('p', { class: 'article-text', text: p })),
-            el('h3', { class: 'section-title', text: 'Ejemplos' }),
-            el(
-              'div',
-              { class: 'examples' },
-              a.examples.map((ex) =>
-                el('div', { class: 'example' }, [
-                  interlinear(ex.words, ex.translation, ex.language),
-                  ex.note ? el('p', { class: 'muted example-note', text: ex.note }) : null,
-                ])
-              )
-            ),
-          ]),
-          el('aside', { class: 'article-aside' }, articleAside(a, levels, next)),
-        ]),
+        // Una sola columna centrada: texto, ejemplos uno debajo de otro y, al final, el resto.
+        ...a.paragraphs.map((p) => el('p', { class: 'article-text', text: p })),
+        el('h3', { class: 'section-title', text: 'Ejemplos' }),
+        el(
+          'div',
+          { class: 'examples' },
+          a.examples.map((ex) =>
+            el('div', { class: 'example' }, [
+              interlinear(ex.words, ex.translation, ex.language),
+              ex.note ? el('p', { class: 'muted example-note', text: ex.note }) : null,
+            ])
+          )
+        ),
+        el('div', { class: 'article-footer' }, articleAside(a, levels, next)),
       ])
     );
   }
