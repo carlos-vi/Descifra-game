@@ -12,16 +12,15 @@ Abre `index.html` en el navegador. No necesita instalación ni servidor.
 
 - **Reto diario** (`#hoy`): una lengua nueva cada día, la misma para todos, numerada como
   «Descifra #N». Como el crucigrama del New York Times, el lunes es el más fácil y el
-  domingo el más difícil. Se juega una vez al día; al terminar se puede copiar el resultado para
-  compartirlo sin desvelar la solución, y se guardan la racha y las estadísticas.
-  Los puzzles salen de `js/daily-puzzles.js` y se repiten cuando se acaba el banco.
-- **Niveles**: 18 niveles en cinco grupos (Iniciación, Intermedio, Avanzado, Olimpiada
-  y Escrituras) que se pueden reiniciar. Escrituras incluye un alfabeto de símbolos,
-  numerales mayas, un silabario con cartuchos y jeroglíficos. Los avanzados usan fichas de piezas
-  sueltas («ni-», «-ne»), preguntas de opción múltiple y, en Olimpiada, traducciones
-  desordenadas que primero hay que emparejar.
-- **Aprende** (`#aprende`): artículos sobre los fenómenos gramaticales de los niveles
-  (ergatividad, clases nominales, evidencialidad…) con ejemplos de lenguas reales.
+  domingo el más difícil. Se juega una vez al día; al terminar se puede copiar el
+  resultado sin desvelar la solución, y se guardan la racha y las estadísticas.
+- **Categorías** (`#cat-…`): 29 niveles en ocho categorías (Primeros pasos, Frases,
+  Piezas de palabras, Significado, Sonidos, Números, Escrituras y Olimpiada), cada uno
+  con una dificultad de 1 a 5. Cada nivel indica en qué lenguas reales se inspira, con
+  enlaces a Wikipedia.
+- **Aprende** (`#aprende`): artículos sobre los fenómenos de los niveles (ergatividad,
+  tonos, clasificadores, escrituras…) con ejemplos de lenguas reales y lecturas.
+- **Ajustes**: el resaltado de palabras iguales es opcional y está desactivado por defecto.
 
 ## Cómo funciona
 
@@ -36,6 +35,7 @@ Abre `index.html` en el navegador. No necesita instalación ni servidor.
 index.html
 css/style.css
 js/engine.js     lógica del juego (sin DOM, probada con Node)
+js/categories.js categorías de niveles
 js/puzzles.js    niveles de práctica y explicación del formato de los puzzles
 js/daily-puzzles.js  banco de puzzles del reto diario
 js/learn.js      artículos de la sección Aprende

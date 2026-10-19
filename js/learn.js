@@ -1,4 +1,5 @@
 // Artículos de la sección «Aprende».
+// "links": lecturas recomendadas; llevan a la búsqueda de Wikipedia en español.
 //
 // Cada ejemplo es una frase de una lengua real, palabra a palabra: [forma, glosa].
 // La forma lleva los morfemas separados por guiones; la frase original se obtiene
@@ -42,6 +43,30 @@
         },
       ],
       languages: ['Japonés', 'Turco', 'Euskera', 'Irlandés', 'Árabe clásico', 'Latín', 'Hixkaryana'],
+      links: [{ label: 'Sujeto, objeto, verbo', wiki: 'Sujeto objeto verbo' }, { label: 'Orden sintáctico', wiki: 'Orden sintáctico' }],
+    },
+    {
+      id: 'si-no',
+      title: 'Responder sin «sí» ni «no»',
+      summary: 'Hay lenguas que no tienen palabra para «sí»: se contesta repitiendo el verbo de la pregunta.',
+      paragraphs: [
+        'En español respondemos con «sí» o «no». Pero muchas lenguas no tienen esas palabras, o las usan poco. ' +
+          'En irlandés, a «¿Estás cansado?» se responde «Estoy» o «No estoy». El finés y el chino hacen algo parecido.',
+        'Las preguntas también se forman de maneras distintas: con entonación, como en español; cambiando el orden, como en inglés o alemán; ' +
+          'o con una partícula al final, como el «ma» del chino o el «ka» del japonés.',
+      ],
+      examples: [
+        { language: 'Finés', words: [['Tule-t-ko', 'venir-tú-pregunta']], translation: '¿Vienes?' },
+        { language: 'Finés', words: [['Tule-n', 'venir-yo']], translation: 'Sí (literalmente, «vengo»).' },
+        {
+          language: 'Chino mandarín',
+          words: [['nǐ', 'tú'], ['qù', 'ir'], ['ma', 'pregunta']],
+          translation: '¿Vas?',
+          note: 'Para responder que sí basta con «qù», «voy».',
+        },
+      ],
+      languages: ['Irlandés', 'Finés', 'Chino mandarín', 'Japonés', 'Galés'],
+      links: [{ label: 'Sí y no', wiki: 'Sí y no' }, { label: 'Idioma irlandés', wiki: 'Idioma irlandés' }],
     },
     {
       id: 'aglutinacion',
@@ -68,6 +93,31 @@
         },
       ],
       languages: ['Turco', 'Finés', 'Húngaro', 'Quechua', 'Euskera', 'Japonés'],
+      links: [{ label: 'Lengua aglutinante', wiki: 'Lengua aglutinante' }, { label: 'Morfema', wiki: 'Morfema' }],
+    },
+    {
+      id: 'numero',
+      title: 'Uno, dos, muchos',
+      summary: 'Además de singular y plural, algunas lenguas tienen un número especial para «dos»: el dual.',
+      paragraphs: [
+        'El español distingue entre uno y más de uno. Otras lenguas tienen un tercer número, el dual, solo para dos cosas. ' +
+          'Lo tenían el griego antiguo y el sánscrito, y lo conservan hoy el esloveno, el árabe, el sami o el inuktitut.',
+        'Unas pocas lenguas van más allá y tienen trial (exactamente tres) o paucal (unos pocos). ' +
+          'Y otras, como el chino o el japonés, casi nunca marcan el plural: el contexto basta.',
+      ],
+      examples: [
+        { language: 'Esloveno', words: [['hiš-a', 'casa-singular']], translation: 'una casa' },
+        { language: 'Esloveno', words: [['hiš-i', 'casa-dual']], translation: 'dos casas' },
+        { language: 'Esloveno', words: [['hiš-e', 'casa-plural']], translation: 'casas (tres o más)' },
+        {
+          language: 'Árabe',
+          words: [['kitāb-ān', 'libro-dual']],
+          translation: 'dos libros',
+          note: 'Frente a kitāb, «libro», y kutub, «libros».',
+        },
+      ],
+      languages: ['Esloveno', 'Árabe', 'Inuktitut', 'Sami', 'Griego antiguo', 'Sánscrito'],
+      links: [{ label: 'Número dual', wiki: 'Número dual' }, { label: 'Número gramatical', wiki: 'Número gramatical' }],
     },
     {
       id: 'armonia',
@@ -93,6 +143,47 @@
         },
       ],
       languages: ['Turco', 'Finés', 'Húngaro', 'Mongol'],
+      links: [{ label: 'Armonía vocálica', wiki: 'Armonía vocálica' }],
+    },
+    {
+      id: 'tonos',
+      title: 'Lenguas tonales',
+      summary: 'En muchas lenguas, la altura de la voz cambia el significado: «ma» puede ser madre o caballo.',
+      paragraphs: [
+        'En español la entonación expresa emoción o pregunta, pero no cambia el significado de una palabra. ' +
+          'En las lenguas tonales sí: la misma sílaba dicha más aguda, más grave, subiendo o bajando, es otra palabra.',
+        'Son muy frecuentes: el chino (cuatro tonos en mandarín), el vietnamita (seis), el tailandés, el yoruba, el zulú o muchas lenguas de América como el mixteco. ' +
+          'En algunas lenguas africanas el tono también hace de gramática y distingue, por ejemplo, el presente del pasado.',
+        'Cuando se escriben con letras latinas, los tonos suelen marcarse con tildes y otros signos sobre las vocales.',
+      ],
+      examples: [
+        { language: 'Chino mandarín', words: [['mā', 'tono alto']], translation: 'madre' },
+        { language: 'Chino mandarín', words: [['má', 'tono que sube']], translation: 'cáñamo' },
+        { language: 'Chino mandarín', words: [['mǎ', 'tono que baja y sube']], translation: 'caballo' },
+        { language: 'Chino mandarín', words: [['mà', 'tono que baja']], translation: 'regañar' },
+      ],
+      languages: ['Chino mandarín', 'Vietnamita', 'Tailandés', 'Yoruba', 'Zulú', 'Mixteco'],
+      links: [{ label: 'Lengua tonal', wiki: 'Lengua tonal' }, { label: 'Tono (lingüística)', wiki: 'Tono (lingüística)' }],
+    },
+    {
+      id: 'cambio-fonetico',
+      title: 'Lenguas hermanas',
+      summary: 'Las lenguas emparentadas cambian sus sonidos de forma regular, y eso permite predecir unas palabras a partir de otras.',
+      paragraphs: [
+        'El español, el italiano, el francés o el portugués vienen del latín. Al evolucionar, cada una cambió sus sonidos, pero no al azar: ' +
+          'un mismo sonido cambió igual en casi todas las palabras. Por eso «noche», «notte», «nuit» y «noite» se parecen tanto.',
+        'En castellano, por ejemplo, la f inicial latina se convirtió en h en muchas palabras: filium dio «hijo», ferrum dio «hierro» y facere, «hacer». ' +
+          'En las lenguas germánicas, la p se volvió f: el latín pater y piscis corresponden al inglés father y fish. Este cambio forma parte de la ley de Grimm.',
+        'Gracias a estas regularidades, los lingüistas pueden reconstruir cómo eran lenguas de las que no queda ningún texto, como el protoindoeuropeo.',
+      ],
+      examples: [
+        { language: 'Latín → español', words: [['filium', 'latín'], ['hijo', 'español']], translation: 'f se vuelve h' },
+        { language: 'Latín → español', words: [['ferrum', 'latín'], ['hierro', 'español']], translation: 'f se vuelve h' },
+        { language: 'Latín e inglés', words: [['pater', 'latín'], ['father', 'inglés']], translation: 'p se corresponde con f' },
+        { language: 'Latín e inglés', words: [['piscis', 'latín'], ['fish', 'inglés']], translation: 'p se corresponde con f' },
+      ],
+      languages: ['Latín', 'Español', 'Italiano', 'Inglés', 'Alemán', 'Protoindoeuropeo'],
+      links: [{ label: 'Cambio fonético', wiki: 'Cambio fonético' }, { label: 'Ley de Grimm', wiki: 'Ley de Grimm' }],
     },
     {
       id: 'compuestos',
@@ -117,6 +208,7 @@
         { language: 'Inglés antiguo', words: [['hron-rād', 'ballena-camino']], translation: 'el mar (en poesía)' },
       ],
       languages: ['Alemán', 'Chino mandarín', 'Finés', 'Inglés antiguo', 'Islandés'],
+      links: [{ label: 'Kenning', wiki: 'Kenning' }, { label: 'Palabra compuesta', wiki: 'Palabra compuesta' }],
     },
     {
       id: 'ergatividad',
@@ -151,6 +243,7 @@
         },
       ],
       languages: ['Euskera', 'Georgiano', 'Hindi', 'Maya yucateco', 'Inuktitut', 'Dyirbal'],
+      links: [{ label: 'Lengua ergativa', wiki: 'Lengua ergativa' }, { label: 'Euskera', wiki: 'Euskera' }],
     },
     {
       id: 'clases',
@@ -182,6 +275,7 @@
         },
       ],
       languages: ['Suajili', 'Zulú', 'Kikuyu', 'Lingala'],
+      links: [{ label: 'Clase nominal', wiki: 'Clase nominal' }, { label: 'Idioma suajili', wiki: 'Idioma suajili' }],
     },
     {
       id: 'polipersonal',
@@ -200,6 +294,7 @@
         { language: 'Náhuatl', words: [['ni-mitz-tlazohtla', 'yo-a ti-querer']], translation: 'Te quiero.' },
       ],
       languages: ['Suajili', 'Euskera', 'Georgiano', 'Náhuatl', 'Mohawk'],
+      links: [{ label: 'Lengua polisintética', wiki: 'Lengua polisintética' }, { label: 'Idioma náhuatl', wiki: 'Idioma náhuatl' }],
     },
     {
       id: 'evidencialidad',
@@ -230,6 +325,7 @@
         },
       ],
       languages: ['Quechua', 'Aimara', 'Turco', 'Búlgaro', 'Tibetano', 'Tuyuca'],
+      links: [{ label: 'Evidencialidad', wiki: 'Evidencialidad' }, { label: 'Lenguas quechuas', wiki: 'Lenguas quechuas' }],
     },
     {
       id: 'posesion',
@@ -262,6 +358,7 @@
         },
       ],
       languages: ['Húngaro', 'Turco', 'Náhuatl', 'Quechua', 'Hebreo'],
+      links: [{ label: 'Posesión inalienable', wiki: 'Posesión inalienable' }, { label: 'Idioma húngaro', wiki: 'Idioma húngaro' }],
     },
     {
       id: 'inclusivo',
@@ -291,6 +388,7 @@
         },
       ],
       languages: ['Indonesio', 'Tagalo', 'Hawaiano', 'Quechua', 'Aimara', 'Tamil'],
+      links: [{ label: 'Clusividad', wiki: 'Clusividad' }, { label: 'Idioma indonesio', wiki: 'Idioma indonesio' }],
     },
     {
       id: 'parentesco',
@@ -319,6 +417,45 @@
         },
       ],
       languages: ['Hawaiano', 'Chino mandarín', 'Lenguas iroquesas', 'Sueco', 'Hindi'],
+      links: [{ label: 'Terminología de parentesco', wiki: 'Terminología de parentesco' }, { label: 'Lewis H. Morgan', wiki: 'Lewis Henry Morgan' }],
+    },
+    {
+      id: 'clasificadores',
+      title: 'Clasificadores',
+      summary: 'Para contar cosas, muchas lenguas añaden una palabra que depende de su forma: no es lo mismo contar lápices que hojas.',
+      paragraphs: [
+        'En español decimos «dos lápices» sin más. En japonés, chino, coreano, tailandés o en muchas lenguas mayas hace falta una palabra entre el número y la cosa: el clasificador. ' +
+          'Algo parecido hacemos al decir «dos cabezas de ganado» o «tres hojas de papel».',
+        'Los clasificadores agrupan las cosas por su forma (largas, planas, redondas), por si son seres vivos, por su función… ' +
+          'y a veces por razones históricas que ya nadie recuerda.',
+      ],
+      examples: [
+        { language: 'Japonés', words: [['enpitsu', 'lápiz'], ['ni-hon', 'dos-largo']], translation: 'dos lápices' },
+        { language: 'Japonés', words: [['kami', 'papel'], ['ni-mai', 'dos-plano']], translation: 'dos hojas de papel' },
+        { language: 'Japonés', words: [['neko', 'gato'], ['ni-hiki', 'dos-animal']], translation: 'dos gatos' },
+        { language: 'Chino mandarín', words: [['sān', 'tres'], ['běn', 'volumen'], ['shū', 'libro']], translation: 'tres libros' },
+      ],
+      languages: ['Japonés', 'Chino mandarín', 'Coreano', 'Tailandés', 'Tzeltal'],
+      links: [{ label: 'Clasificador (lingüística)', wiki: 'Clasificador (lingüística)' }],
+    },
+    {
+      id: 'direcciones',
+      title: 'Norte, sur, este y oeste',
+      summary: 'Hay lenguas sin «izquierda» ni «derecha»: todo se sitúa con los puntos cardinales.',
+      paragraphs: [
+        'Para decir dónde está algo, el español usa sobre todo el propio cuerpo: delante, detrás, a la izquierda, a la derecha. ' +
+          'Si te das la vuelta, lo que estaba a tu derecha pasa a estar a tu izquierda.',
+        'El guugu yimithirr, una lengua del norte de Australia, no funciona así: se dice que algo está al norte o al este de ti, aunque esté a un palmo. ' +
+          'Sus hablantes saben en todo momento dónde está cada punto cardinal, igual que nosotros sabemos dónde está nuestra mano derecha.',
+        'Otras lenguas usan referencias del paisaje: en balinés se habla de «hacia la montaña» (kaja) y «hacia el mar» (kelod), y en tzeltal, en México, de «cuesta arriba» y «cuesta abajo». ' +
+          'Guy Deutscher lo cuenta en su libro «El prisma del lenguaje».',
+      ],
+      examples: [
+        { language: 'Guugu yimithirr', words: [['gungga', 'norte'], ['jiba', 'sur'], ['naga', 'este'], ['guwa', 'oeste']], translation: 'los cuatro puntos cardinales' },
+        { language: 'Balinés', words: [['kaja', 'hacia la montaña'], ['kelod', 'hacia el mar']], translation: 'las dos direcciones principales' },
+      ],
+      languages: ['Guugu yimithirr', 'Balinés', 'Tzeltal'],
+      links: [{ label: 'Guugu yimithirr', wiki: 'Idioma guugu yimithirr' }, { label: 'Punto cardinal', wiki: 'Punto cardinal' }],
     },
     {
       id: 'numeros',
@@ -355,6 +492,7 @@
         },
       ],
       languages: ['Euskera', 'Náhuatl', 'Maya', 'Yoruba', 'Francés', 'Georgiano', 'Babilonio'],
+      links: [{ label: 'Sistema vigesimal', wiki: 'Sistema vigesimal' }, { label: 'Numeración maya', wiki: 'Numeración maya' }],
     },
     {
       id: 'tiempo',
@@ -371,6 +509,7 @@
         { language: 'Indonesio', words: [['saya', 'yo'], ['akan', 'futuro'], ['makan', 'comer']], translation: 'Comeré.' },
       ],
       languages: ['Vietnamita', 'Chino mandarín', 'Indonesio', 'Tailandés'],
+      links: [{ label: 'Lengua aislante', wiki: 'Lengua aislante' }, { label: 'Aspecto gramatical', wiki: 'Aspecto gramatical' }],
     },
     {
       id: 'no-concatenativa',
@@ -394,6 +533,7 @@
         { language: 'Árabe', words: [['kātib', 'escritor (raíz k-t-b)']], translation: 'escritor' },
       ],
       languages: ['Tagalo', 'Indonesio', 'Árabe', 'Hebreo'],
+      links: [{ label: 'Infijo', wiki: 'Infijo' }, { label: 'Reduplicación', wiki: 'Reduplicación (lingüística)' }, { label: 'Idioma árabe', wiki: 'Idioma árabe' }],
     },
     {
       id: 'escrituras',
@@ -408,6 +548,7 @@
           'Champollion los descifró en 1822 gracias a la piedra de Rosetta, que tenía el mismo texto en jeroglífico, en demótico y en griego. ' +
           'Su clave fueron los nombres de reyes encerrados en cartuchos, como Ptolomeo y Cleopatra: sabía cómo sonaban y pudo comparar sus signos.',
         'Un siglo después, Michael Ventris descifró en 1952 la escritura lineal B de Creta, un silabario, y descubrió que escondía una forma muy antigua del griego.',
+        'No todas las escrituras se leen con la vista: el braille, que Louis Braille inventó en 1824 con solo 15 años, representa cada letra con puntos en relieve que se leen con los dedos.',
       ],
       examples: [
         {
@@ -430,6 +571,7 @@
         },
       ],
       languages: ['Japonés', 'Chino', 'Árabe', 'Hebreo', 'Cherokee', 'Egipcio antiguo', 'Griego micénico'],
+      links: [{ label: 'Sistema de escritura', wiki: 'Sistema de escritura' }, { label: 'Piedra de Rosetta', wiki: 'Piedra de Rosetta' }, { label: 'Lineal B', wiki: 'Lineal B' }, { label: 'Braille', wiki: 'Braille' }],
     },
   ];
 

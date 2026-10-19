@@ -66,6 +66,15 @@
     return challenge.answer;
   }
 
+  // Orden en que se muestran las opciones de una pregunta (la respuesta guarda el índice original).
+  function optionOrder(puzzle, index) {
+    const challenge = puzzle.challenges[index];
+    return shuffle(
+      challenge.options.map((_, i) => i),
+      puzzle.id + ':' + index + ':options'
+    );
+  }
+
   function maxAttempts(challenge) {
     if (challenge.maxAttempts) return challenge.maxAttempts;
     return challenge.type === 'choice' ? 2 : MAX_ATTEMPTS;
@@ -257,8 +266,21 @@
   function segment(word, glossary) {
     if (hasKey(glossary, word)) return [word];
     const keys = Object.keys(glossary);
+    // Infijos ("<um>"): se meten después de la primera consonante.
+    for (const infix of keys.filter((k) => k.startsWith('<') && k.endsWith('>'))) {
+      const inner = infix.slice(1, -1);
+      if (word.slice(1, 1 + inner.length) === inner) {
+        const rest = segment(word[0] + word.slice(1 + inner.length), glossary);
+        if (rest) return [infix].concat(rest);
+      }
+    }
+    // Reduplicación ("~"): se repite la primera sílaba (consonante + vocal).
+    if (hasKey(glossary, '~') && word.length > 4 && word.slice(0, 2) === word.slice(2, 4)) {
+      const rest = segment(word.slice(2), glossary);
+      if (rest) return ['~'].concat(rest);
+    }
     // Palabras compuestas: raíz + resto.
-    for (const root of keys.filter((k) => !k.includes('-'))) {
+    for (const root of keys.filter((k) => !k.includes('-') && !k.startsWith('<') && k !== '~')) {
       if (word.length > root.length && word.startsWith(root)) {
         const rest = segment(word.slice(root.length), glossary);
         if (rest) return [root].concat(rest);
@@ -379,6 +401,7 @@
     scrambledOrder,
     letter,
     challengeAnswer,
+    optionOrder,
     maxAttempts,
     joinMorphemes,
     readAs,

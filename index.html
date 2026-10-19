@@ -2,16 +2,30 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Descifra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header class="topbar">
-    <button class="link-button" id="home-button" type="button" hidden>← Inicio</button>
-    <h1 class="brand"><a href="#">Descifra</a></h1>
-    <span class="topbar-spacer"></span>
-    <a class="nav-link" id="learn-link" href="#aprende">Aprende</a>
+    <div class="topbar-inner">
+      <button class="icon-button" id="home-button" type="button" hidden aria-label="Volver al inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5 L8 12 L15 19"/></svg>
+      </button>
+      <a class="brand" href="#">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="1" y="1" width="30" height="30" rx="9"/><path d="M8 20 C8 11 24 11 24 20 M16 9 V5 M12 24 H20" fill="none" stroke-width="2.6" stroke-linecap="round"/><circle cx="16" cy="18" r="2.6"/></svg>
+        <span class="brand-name">Descifra</span>
+      </a>
+      <nav class="topnav">
+        <a class="nav-link" href="#aprende">Aprende</a>
+        <button class="icon-button" id="settings-button" type="button" aria-label="Ajustes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2 V5 M12 19 V22 M2 12 H5 M19 12 H22 M4.9 4.9 L7 7 M17 17 L19.1 19.1 M4.9 19.1 L7 17 M17 7 L19.1 4.9"/></svg>
+        </button>
+      </nav>
+    </div>
   </header>
 
   <main id="app"></main>
@@ -20,8 +34,13 @@
     <div class="dialog-body"></div>
   </dialog>
 
+  <dialog id="settings-dialog">
+    <div class="dialog-body"></div>
+  </dialog>
+
   <script src="js/engine.js"></script>
   <script src="js/scripts.js"></script>
+  <script src="js/categories.js"></script>
   <script src="js/puzzles.js"></script>
   <script src="js/daily-puzzles.js"></script>
   <script src="js/learn.js"></script>

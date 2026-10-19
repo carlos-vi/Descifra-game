@@ -100,7 +100,8 @@ test('segment separa raíces y sufijos', () => {
 
 // ---------- Validación de los puzzles ----------
 
-const TIERS = ['iniciacion', 'intermedio', 'avanzado', 'olimpiada', 'escrituras'];
+const CATEGORIES = require('../js/categories.js');
+const CATEGORY_IDS = CATEGORIES.map((c) => c.id);
 const Scripts = require('../js/scripts.js');
 
 // Comprobaciones de los puzzles escritos con glifos.
@@ -158,7 +159,12 @@ for (const puzzle of ALL_PUZZLES) {
     assert.ok(puzzle.id && puzzle.title && puzzle.language && puzzle.intro);
     assert.ok(puzzle.corpus.length >= 3, 'al menos 3 frases de ejemplo');
     assert.ok(puzzle.rules.length >= 1, 'al menos una regla');
-    if (LEVELS.includes(puzzle)) assert.ok(TIERS.includes(puzzle.tier), 'nivel con grupo de dificultad');
+    if (LEVELS.includes(puzzle)) {
+      assert.ok(CATEGORY_IDS.includes(puzzle.category), 'nivel con categoría');
+      assert.ok(puzzle.difficulty >= 1 && puzzle.difficulty <= 5, 'dificultad de 1 a 5');
+      assert.ok(puzzle.inspiration && puzzle.inspiration.text && puzzle.inspiration.links.length, 'nivel con inspiración');
+      puzzle.inspiration.links.forEach((l) => assert.ok(l.label && l.wiki, 'enlace con texto y término'));
+    }
 
     if (puzzle.script) {
       checkScriptPuzzle(puzzle);
@@ -466,4 +472,91 @@ test('los números del nivel senka son coherentes con la base 6', () => {
     if (c.type === 'choice') assert.equal(String(value(/«(.+)»/.exec(c.prompt)[1])), c.options[c.correct]);
     if (c.type === 'to-language') assert.equal(String(value(c.answer.join(' '))), c.prompt);
   });
+});
+
+// ---------- Organización y piezas nuevas ----------
+
+test('cada categoría tiene niveles y todos los ids son válidos para un enlace', () => {
+  for (const c of CATEGORIES) {
+    assert.ok(/^[a-z]+$/.test(c.id) && c.title && c.description && c.icon);
+    assert.ok(LEVELS.some((p) => p.category === c.id), `categoría ${c.id} sin niveles`);
+  }
+  for (const p of LEVELS) assert.ok(/^[a-z]+$/.test(p.id), `id "${p.id}" válido para un enlace`);
+});
+
+test('segment reconoce infijos y reduplicación', () => {
+  const sumal = LEVELS.find((p) => p.id === 'sumal');
+  assert.deepEqual(Engine.segment('kumiro', sumal.glossary), ['<um>', 'kiro']);
+  assert.deepEqual(Engine.segment('papasu', sumal.glossary), ['~', 'pasu']);
+  assert.deepEqual(Engine.segment('nena', sumal.glossary), ['nena']);
+});
+
+test('optionOrder baraja las opciones sin perder ninguna', () => {
+  const kito = LEVELS.find((p) => p.id === 'kito');
+  const order = Engine.optionOrder(kito, 4);
+  assert.deepEqual(order.slice().sort(), [0, 1, 2, 3]);
+  assert.deepEqual(order, Engine.optionOrder(kito, 4));
+});
+
+test('braille: de la k a la t son las letras de la a a la j con el punto 3', () => {
+  const dots = (l) => (Scripts.glyphMarkup('braille', l).match(/r="3.2"/g) || []).length;
+  'abcdefghij'.split('').forEach((l, i) => assert.equal(dots('klmnopqrst'[i]), dots(l) + 1));
+});
+
+test('los números del nivel ogani siguen sus reglas', () => {
+  const ogani = LEVELS.find((p) => p.id === 'ogani');
+  const values = { ka: 1, re: 2, mi: 3, lo: 4, su: 5, ten: 10, ogi: 20, pan: 30, ve: 40 };
+  const value = (text) => {
+    const [a, op, b] = text.split(' ');
+    if (!op) return values[a];
+    return op === 'ra' ? values[a] + values[b] : values[a] - values[b];
+  };
+  // Forma canónica: unidades 1-4 se suman, 5-9 se restan de la decena siguiente.
+  const canonical = (n) => {
+    const tens = ['', 'ten', 'ogi', 'pan', 've'];
+    const u = n % 10;
+    if (n <= 5) return Object.keys(values).find((k) => values[k] === n);
+    if (u === 0) return tens[n / 10];
+    if (u <= 4) return tens[(n - u) / 10] + ' ra ' + Object.keys(values).find((k) => values[k] === u);
+    return tens[(n - u) / 10 + 1] + ' dun ' + Object.keys(values).find((k) => values[k] === 10 - u);
+  };
+  ogani.corpus.forEach((s) => {
+    assert.equal(String(value(s.text)), s.translation);
+    assert.equal(canonical(Number(s.translation)), s.text);
+  });
+  ogani.challenges.forEach((c) => {
+    if (c.type === 'to-language') assert.equal(c.answer.join(' '), canonical(Number(c.prompt)));
+  });
+  assert.equal(canonical(27), 'pan dun mi');
+  assert.equal(canonical(9), 'ten dun ka');
+});
+
+test('los cambios de sonido del nivel kasu son regulares', () => {
+  const kasu = LEVELS.find((p) => p.id === 'kasu');
+  const toHasu = (w) => w.replace(/p/g, 'f').replace(/k/g, 'h').replace(/a$/, 'e');
+  kasu.corpus.forEach((s) => assert.ok(s.translation.endsWith('en hasu: ' + toHasu(s.text)), s.text));
+  assert.equal(toHasu('paka'), 'fahe');
+  assert.equal(toHasu('kopi'), 'hofi');
+  assert.equal(toHasu('kimo'), 'himo');
+  assert.equal(toHasu('pusa'), 'fuse');
+});
+
+test('las direcciones del nivel yimbi son coherentes', () => {
+  const yimbi = LEVELS.find((p) => p.id === 'yimbi');
+  const words = { kuli: 'este', tapa: 'oeste', sani: 'norte', ruma: 'sur' };
+  const order = ['norte', 'este', 'sur', 'oeste'];
+  const side = (facing, rel) => order[(order.indexOf(facing) + { derecha: 1, izquierda: 3, delante: 0, detrás: 2 }[rel]) % 4];
+  yimbi.corpus.forEach((s) => {
+    const [, facing, rel] = /Mira al (\w+) y .* a su (\w+)\./.exec(s.translation);
+    assert.equal(words[s.text.split(' ')[1]], side(facing, rel), s.translation);
+  });
+  assert.equal(side('sur', 'derecha'), 'oeste');
+  assert.equal(side('oeste', 'derecha'), 'norte');
+});
+
+test('cada artículo tiene enlaces para saber más', () => {
+  for (const a of ARTICLES) {
+    assert.ok(a.links && a.links.length, `${a.id} sin enlaces`);
+    a.links.forEach((l) => assert.ok(l.label && l.wiki));
+  }
 });

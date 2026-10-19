@@ -1,24 +1,15 @@
-// Interfaz del juego: pantallas, fichas y guardado del progreso.
+// Interfaz del juego: pantallas, fichas, ajustes y guardado del progreso.
 (function () {
   'use strict';
 
   const app = document.getElementById('app');
   const homeButton = document.getElementById('home-button');
   const dialog = document.getElementById('result-dialog');
+  const settingsDialog = document.getElementById('settings-dialog');
+  const settingsButton = document.getElementById('settings-button');
   const STORAGE_PREFIX = 'descifra:v1:';
   const STATS_KEY = 'stats';
-
-  const TIERS = [
-    { id: 'iniciacion', title: 'Iniciación', description: 'Vocabulario, plurales, orden de palabras y tiempos.' },
-    { id: 'intermedio', title: 'Intermedio', description: 'Varias reglas a la vez y fichas de piezas sueltas.' },
-    { id: 'avanzado', title: 'Avanzado', description: 'Gramáticas sin equivalente en español.' },
-    { id: 'olimpiada', title: 'Olimpiada', description: 'Traducciones desordenadas: primero hay que emparejarlas.' },
-    {
-      id: 'escrituras',
-      title: 'Escrituras',
-      description: 'Descifra símbolos: un alfabeto, números mayas, sílabas y jeroglíficos, de más fácil a más difícil.',
-    },
-  ];
+  const SETTINGS_KEY = 'settings';
 
   const DAILY_LABELS = [
     'Lunes · muy fácil',
@@ -30,6 +21,15 @@
     'Domingo · el más difícil',
   ];
 
+  const ICONS = {
+    back: '<path d="M15 5 L8 12 L15 19"/>',
+    next: '<path d="M9 5 L16 12 L9 19"/>',
+    star: '<path d="M12 3 L14.6 9 L21 9.5 L16 13.6 L17.6 20 L12 16.6 L6.4 20 L8 13.6 L3 9.5 L9.4 9 Z"/>',
+    book: '<path d="M4 5 C8 4 10 5 12 7 C14 5 16 4 20 5 V19 C16 18 14 19 12 20 C10 19 8 18 4 19 Z M12 7 V20"/>',
+    link: '<path d="M14 4 H20 V10 M20 4 L11 13 M18 14 V20 H4 V6 H10"/>',
+    calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10 H20 M9 3 V7 M15 3 V7"/>',
+  };
+
   // Selección en curso, por reto: índices de fichas, letras elegidas u opción marcada.
   let selections = {};
   let pinnedWord = null;
@@ -38,6 +38,8 @@
   let countdownTimer = null;
   // Escritura de glifos del puzzle abierto (null si se escribe con letras).
   let currentScript = null;
+  // Reto que se acaba de comprobar, para animar su última fila.
+  let justChecked = null;
 
   // ---------- Guardado ----------
 
@@ -55,6 +57,24 @@
       localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
     } catch (e) {
       // Sin almacenamiento disponible: se juega sin guardar.
+    }
+  }
+
+  function clearKey(key) {
+    try {
+      localStorage.removeItem(STORAGE_PREFIX + key);
+    } catch (e) {
+      // Ignorado a propósito.
+    }
+  }
+
+  function clearAllProgress() {
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith(STORAGE_PREFIX) && k !== STORAGE_PREFIX + SETTINGS_KEY)
+        .forEach((k) => localStorage.removeItem(k));
+    } catch (e) {
+      // Ignorado a propósito.
     }
   }
 
@@ -79,13 +99,12 @@
     return readJSON(STATS_KEY) || Engine.emptyStats();
   }
 
-  function clearState(key) {
-    try {
-      localStorage.removeItem(STORAGE_PREFIX + key);
-    } catch (e) {
-      // Ignorado a propósito.
-    }
+  // Ajustes del jugador. El resaltado de palabras iguales empieza desactivado.
+  function loadSettings() {
+    return Object.assign({ highlight: false }, readJSON(SETTINGS_KEY));
   }
+
+  let settings = loadSettings();
 
   // ---------- Utilidades ----------
 
@@ -104,18 +123,82 @@
     return node;
   }
 
-  // «el kenna», o «la escritura» en los niveles de glifos.
-  function subject(puzzle) {
-    return puzzle.script ? 'la escritura' : 'el ' + puzzle.language;
+  function svgIcon(inner, extraClass) {
+    return el('span', {
+      class: 'icon ' + (extraClass || ''),
+      'aria-hidden': 'true',
+      html:
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+        'stroke-linejoin="round" focusable="false">' + inner + '</svg>',
+    });
+  }
+
+  function wikiUrl(term) {
+    return 'https://es.wikipedia.org/w/index.php?title=Especial:Buscar&go=Ir&search=' + encodeURIComponent(term);
+  }
+
+  function externalLinks(links) {
+    return el(
+      'ul',
+      { class: 'external-links' },
+      links.map((l) =>
+        el('li', {}, [
+          el('a', { href: wikiUrl(l.wiki), target: '_blank', rel: 'noopener' }, [
+            document.createTextNode(l.label),
+            svgIcon(ICONS.link, 'small'),
+          ]),
+        ])
+      )
+    );
   }
 
   function starsText(stars) {
     return '★'.repeat(stars) + '☆'.repeat(3 - stars);
   }
 
+  // «el kenna», o «la escritura» en los niveles de glifos.
+  function subject(puzzle) {
+    return puzzle.script ? 'la escritura' : 'el ' + puzzle.language;
+  }
+
   function article(id) {
     return ARTICLES.find((a) => a.id === id);
   }
+
+  function category(id) {
+    return CATEGORIES.find((c) => c.id === id);
+  }
+
+  function catStyle(id) {
+    return '--cat: var(--cat-' + id + '); --cat-soft: var(--cat-' + id + '-soft)';
+  }
+
+  // Niveles de una categoría, de más fácil a más difícil.
+  function levelsIn(categoryId) {
+    return PUZZLES.filter((p) => p.category === categoryId).sort(
+      (a, b) => a.difficulty - b.difficulty || PUZZLES.indexOf(a) - PUZZLES.indexOf(b)
+    );
+  }
+
+  function difficultyDots(level) {
+    return el(
+      'span',
+      { class: 'difficulty', role: 'img', 'aria-label': 'Dificultad ' + level + ' de 5' },
+      [1, 2, 3, 4, 5].map((i) => el('span', { class: 'dot' + (i <= level ? ' on' : '') }))
+    );
+  }
+
+  function levelProgress(puzzle) {
+    const state = loadState(puzzle, puzzle.id);
+    const finished = Engine.isFinished(state);
+    return {
+      finished,
+      started: state.challenges.some((c) => c.attempts.length > 0),
+      stars: finished ? Engine.computeStars(state) : 0,
+    };
+  }
+
+  // ---------- Resaltado de palabras (opcional) ----------
 
   function glyphNode(glyph) {
     return el('span', { class: 'lang-word lang-glyph', 'data-word': glyph, html: Scripts.glyphSvg(currentScript, glyph) });
@@ -128,10 +211,14 @@
       .filter(Boolean)
       .join(' ');
     const words = Engine.tokenize(text).map((word) => el('span', { class: classes }, Engine.glyphsOf(word).map(glyphNode)));
-    return el('span', { class: 'lang-text glyph-text ' + (extraClass || ''), role: 'img', 'aria-label': 'Texto en símbolos' }, words);
+    return el(
+      'span',
+      { class: 'lang-text glyph-text script-' + currentScript + ' ' + (extraClass || ''), role: 'img', 'aria-label': 'Texto en símbolos' },
+      words
+    );
   }
 
-  // Palabras de la lengua, resaltables al pasar el ratón o al tocarlas.
+  // Palabras de la lengua. Si el ajuste está activado, se resaltan al pasar el ratón o al tocarlas.
   function languageText(text, extraClass) {
     if (currentScript) return glyphText(text, extraClass);
     const words = Engine.tokenize(text);
@@ -145,20 +232,22 @@
 
   function setHighlight(word) {
     document.querySelectorAll('.lang-word.highlight').forEach((n) => n.classList.remove('highlight'));
-    if (!word) return;
+    if (!word || !settings.highlight) return;
     document.querySelectorAll('.lang-word').forEach((n) => {
       if (n.dataset.word === word) n.classList.add('highlight');
     });
   }
 
   app.addEventListener('mouseover', (event) => {
+    if (!settings.highlight) return;
     const target = event.target.closest('.lang-word');
     if (target) setHighlight(target.dataset.word);
   });
   app.addEventListener('mouseout', (event) => {
-    if (event.target.closest('.lang-word')) setHighlight(pinnedWord);
+    if (settings.highlight && event.target.closest('.lang-word')) setHighlight(pinnedWord);
   });
   app.addEventListener('click', (event) => {
+    if (!settings.highlight) return;
     const target = event.target.closest('.lang-word');
     if (!target) return;
     pinnedWord = pinnedWord === target.dataset.word ? null : target.dataset.word;
@@ -183,14 +272,6 @@
     ]);
   }
 
-  function topicLinks(topics) {
-    if (!topics || !topics.length) return null;
-    return el('p', { class: 'topic-links' }, [
-      el('span', { class: 'muted', text: 'Aprende más: ' }),
-      ...topics.map((id) => el('a', { class: 'chip', href: '#aprende-' + id, text: article(id).title })),
-    ]);
-  }
-
   // ---------- Pantalla de inicio ----------
 
   function renderDailyCard() {
@@ -200,92 +281,134 @@
     const finished = Engine.isFinished(state);
     const started = state.challenges.some((c) => c.attempts.length > 0);
     const streak = Engine.currentStreak(loadStats(), number);
-    const status = finished
-      ? el('span', { class: 'level-stars', text: starsText(Engine.computeStars(state)) })
-      : el('span', { class: 'daily-cta', text: started ? 'Continuar' : 'Jugar' });
-    return el('a', { class: 'level-card daily-card', href: '#hoy' }, [
-      el('span', { class: 'level-info' }, [
-        el('span', { class: 'eyebrow', text: 'Reto diario · Descifra #' + number + ' · ' + DAILY_LABELS[Engine.dailyDifficulty(number) - 1] }),
-        el('span', { class: 'level-title', text: puzzle.title }),
+    return el('a', { class: 'daily-card', href: '#hoy' }, [
+      el('span', { class: 'daily-info' }, [
+        el('span', { class: 'eyebrow' }, [svgIcon(ICONS.calendar, 'small'), document.createTextNode(' Reto diario · Descifra #' + number)]),
+        el('span', { class: 'daily-title', text: puzzle.title }),
         el('span', {
-          class: 'level-lang',
+          class: 'daily-meta',
           text: finished
-            ? 'Hecho. El siguiente reto llega a medianoche.'
-            : 'Lengua: ' + puzzle.language + ' · ' + puzzle.challenges.length + ' retos',
+            ? 'Hecho: ' + starsText(Engine.computeStars(state)) + '. El siguiente llega a medianoche.'
+            : DAILY_LABELS[Engine.dailyDifficulty(number) - 1] + ' · ' + puzzle.challenges.length + ' retos',
         }),
-        streak > 0 ? el('span', { class: 'level-lang', text: 'Racha: ' + streak + (streak === 1 ? ' día' : ' días') }) : null,
+        streak > 0 ? el('span', { class: 'daily-meta', text: 'Racha: ' + streak + (streak === 1 ? ' día' : ' días') }) : null,
       ]),
-      status,
+      el('span', { class: 'daily-cta', text: finished ? 'Ver' : started ? 'Continuar' : 'Jugar' }),
     ]);
   }
 
-  function levelCard(puzzle) {
-    const state = loadState(puzzle, puzzle.id);
-    const finished = Engine.isFinished(state);
-    const started = state.challenges.some((c) => c.attempts.length > 0);
-    const status = finished
-      ? el('span', { class: 'level-stars', text: starsText(Engine.computeStars(state)) })
-      : el('span', { class: 'level-status', text: started ? 'En curso' : 'Nuevo' });
+  function categoryCard(c) {
+    const levels = levelsIn(c.id);
+    const progress = levels.map(levelProgress);
+    const done = progress.filter((p) => p.finished).length;
+    const stars = progress.reduce((sum, p) => sum + p.stars, 0);
     return el('li', {}, [
-      el('a', { class: 'level-card', href: '#' + puzzle.id }, [
-        el('span', { class: 'level-number', text: String(PUZZLES.indexOf(puzzle) + 1) }),
-        el('span', { class: 'level-info' }, [
-          el('span', { class: 'level-title', text: puzzle.title }),
-          el('span', { class: 'level-lang', text: 'Lengua: ' + puzzle.language }),
+      el('a', { class: 'category-card', href: '#cat-' + c.id, style: catStyle(c.id) }, [
+        el('span', { class: 'category-head' }, [
+          svgIcon(c.icon, 'badge'),
+          el('span', { class: 'category-count', text: done + '/' + levels.length }),
         ]),
-        status,
+        el('span', { class: 'category-title', text: c.title }),
+        el('span', { class: 'category-description', text: c.description }),
+        el('span', { class: 'progress', role: 'img', 'aria-label': done + ' de ' + levels.length + ' niveles completados' }, [
+          el('span', { class: 'progress-bar', style: 'width: ' + Math.round((done / levels.length) * 100) + '%' }),
+        ]),
+        el('span', { class: 'category-stars', text: '★ ' + stars + ' / ' + levels.length * 3 }),
       ]),
     ]);
   }
 
   function renderHome() {
     homeButton.hidden = true;
-    const tiers = TIERS.map((tier) =>
-      el('section', { class: 'tier' }, [
-        el('h2', { class: 'section-title', text: tier.title }),
-        el('p', { class: 'muted tier-description', text: tier.description }),
-        el('ol', { class: 'level-list' }, PUZZLES.filter((p) => p.tier === tier.id).map(levelCard)),
-      ])
-    );
+    const all = PUZZLES.map(levelProgress);
+    const done = all.filter((p) => p.finished).length;
+    const stars = all.reduce((sum, p) => sum + p.stars, 0);
 
     app.replaceChildren(
-      el('section', { class: 'home' }, [
-        el('p', {
-          class: 'lead',
-          text:
-            'Cada reto es una lengua desconocida. Compara las frases de ejemplo con su traducción, ' +
-            'deduce el vocabulario y la gramática, y construye las traducciones con las fichas.',
-        }),
+      el('section', { class: 'hero' }, [
+        el('div', { class: 'hero-text' }, [
+          el('h2', { class: 'hero-title', text: 'Descifra lenguas que nunca has visto' }),
+          el('p', {
+            class: 'lead',
+            text:
+              'Cada nivel es una lengua o una escritura desconocida. Compara los ejemplos, deduce las reglas y demuéstralo traduciendo. ' +
+              'Todas están inspiradas en lenguas reales.',
+          }),
+          el('p', { class: 'hero-stats' }, [
+            el('span', {}, [el('strong', { text: String(done) }), document.createTextNode(' de ' + PUZZLES.length + ' niveles')]),
+            el('span', {}, [el('strong', { text: String(stars) }), document.createTextNode(' de ' + PUZZLES.length * 3 + ' estrellas')]),
+          ]),
+        ]),
         renderDailyCard(),
-        ...tiers,
-        el('a', { class: 'level-card learn-card', href: '#aprende' }, [
-          el('span', { class: 'level-info' }, [
-            el('span', { class: 'eyebrow', text: 'Aprende' }),
-            el('span', { class: 'level-title', text: 'Cómo funcionan las lenguas del mundo' }),
-            el('span', {
-              class: 'level-lang',
-              text: 'Ergatividad, clases nominales, evidencialidad… con ejemplos de euskera, suajili, quechua, turco y muchas más.',
-            }),
-          ]),
-          el('span', { class: 'daily-cta secondary-cta', text: 'Leer' }),
+      ]),
+      el('h2', { class: 'section-title', text: 'Categorías' }),
+      el('ul', { class: 'category-grid' }, CATEGORIES.map(categoryCard)),
+      el('a', { class: 'learn-banner', href: '#aprende' }, [
+        svgIcon(ICONS.book, 'badge'),
+        el('span', { class: 'learn-banner-text' }, [
+          el('span', { class: 'category-title', text: 'Aprende cómo funcionan las lenguas del mundo' }),
+          el('span', {
+            class: 'category-description',
+            text: ARTICLES.length + ' temas con ejemplos reales: ergatividad, tonos, clasificadores, escrituras…',
+          }),
         ]),
-        el('details', { class: 'how-to' }, [
-          el('summary', { text: 'Cómo se juega' }),
-          el('ul', {}, [
-            el('li', { text: 'Pasa el ratón (o toca) sobre una palabra para ver dónde más aparece.' }),
-            el('li', { text: 'Anota en el cuaderno lo que crees que significa cada palabra.' }),
-            el('li', { text: 'En cada reto, pulsa las fichas en orden para formar la respuesta y comprueba.' }),
-            el('li', {
-              text: 'Verde: ficha correcta en su sitio. Amarillo: la ficha va, pero en otro sitio. Gris: no va.',
-            }),
-            el('li', {
-              text: 'En los niveles avanzados las fichas son piezas: «ni-» se une a lo que va detrás y «-ne» a lo que va delante.',
-            }),
-            el('li', {
-              text: 'Los fallos y las pistas restan estrellas. Si agotas los intentos de un reto, el nivel acaba sin estrellas.',
-            }),
+        svgIcon(ICONS.next),
+      ]),
+      el('details', { class: 'how-to' }, [
+        el('summary', { text: 'Cómo se juega' }),
+        el('ul', {}, [
+          el('li', { text: 'Compara las frases de ejemplo con sus traducciones y busca qué se repite.' }),
+          el('li', { text: 'Anota en el cuaderno lo que crees que significa cada palabra o símbolo.' }),
+          el('li', { text: 'En cada reto, pulsa las fichas en orden para formar la respuesta y comprueba.' }),
+          el('li', { text: 'Verde: ficha correcta en su sitio. Amarillo: la ficha va, pero en otro sitio. Gris: no va.' }),
+          el('li', { text: 'Las piezas como «ni-» se unen a lo que va detrás, y las como «-ne», a lo que va delante.' }),
+          el('li', { text: 'Los fallos y las pistas restan estrellas. Si agotas los intentos de un reto, el nivel acaba sin estrellas.' }),
+          el('li', { text: 'En Ajustes puedes activar el resaltado de palabras iguales.' }),
+        ]),
+      ])
+    );
+  }
+
+  function levelCard(puzzle, index) {
+    const p = levelProgress(puzzle);
+    return el('li', {}, [
+      el('a', { class: 'level-card' + (p.finished ? ' done' : ''), href: '#' + puzzle.id, style: catStyle(puzzle.category) }, [
+        el('span', { class: 'level-number', text: String(index + 1) }),
+        el('span', { class: 'level-info' }, [
+          el('span', { class: 'level-title', text: puzzle.title }),
+          el('span', { class: 'level-meta' }, [
+            difficultyDots(puzzle.difficulty),
+            el('span', { text: puzzle.script ? 'Escritura' : 'Lengua: ' + puzzle.language }),
           ]),
         ]),
+        p.finished
+          ? el('span', { class: 'level-stars', text: starsText(p.stars) })
+          : el('span', { class: 'level-status', text: p.started ? 'En curso' : 'Nuevo' }),
+      ]),
+    ]);
+  }
+
+  function renderCategory(c) {
+    homeButton.hidden = false;
+    const levels = levelsIn(c.id);
+    const nextUp = levels.find((p) => !levelProgress(p).finished);
+    app.replaceChildren(
+      el('section', { class: 'category-page', style: catStyle(c.id) }, [
+        el('div', { class: 'category-hero' }, [
+          svgIcon(c.icon, 'badge large'),
+          el('div', {}, [
+            el('p', { class: 'eyebrow', text: 'Categoría' }),
+            el('h2', { class: 'page-title', text: c.title }),
+            el('p', { class: 'lead', text: c.description }),
+          ]),
+        ]),
+        nextUp
+          ? el('a', { class: 'continue-link', href: '#' + nextUp.id }, [
+              document.createTextNode('Siguiente: ' + nextUp.title),
+              svgIcon(ICONS.next, 'small'),
+            ])
+          : el('p', { class: 'muted', text: 'Has completado todos los niveles de esta categoría.' }),
+        el('ol', { class: 'level-list' }, levels.map(levelCard)),
       ])
     );
   }
@@ -301,12 +424,12 @@
     app.replaceChildren(
       el('section', { class: 'learn' }, [
         el('p', { class: 'eyebrow', text: 'Aprende' }),
-        el('h2', { class: 'puzzle-title', text: 'Cómo funcionan las lenguas del mundo' }),
+        el('h2', { class: 'page-title', text: 'Cómo funcionan las lenguas del mundo' }),
         el('p', {
           class: 'lead',
           text:
-            'Las lenguas inventadas del juego están inspiradas en lenguas reales. Aquí tienes los fenómenos ' +
-            'que aparecen en los niveles, explicados con ejemplos de lenguas que se hablan hoy.',
+            'Las lenguas y escrituras del juego están inspiradas en otras reales. Aquí tienes los fenómenos que aparecen en los niveles, ' +
+            'explicados con ejemplos de lenguas que se hablan o se hablaron.',
         }),
         el(
           'ul',
@@ -318,7 +441,7 @@
                 el('span', { class: 'level-title', text: a.title }),
                 el('span', { class: 'article-summary', text: a.summary }),
                 el('span', {
-                  class: 'level-lang',
+                  class: 'level-meta',
                   text:
                     a.languages.slice(0, 3).join(', ') +
                     (levels.length ? ' · ' + levels.length + (levels.length === 1 ? ' nivel' : ' niveles') : ''),
@@ -337,8 +460,8 @@
     const next = ARTICLES[ARTICLES.indexOf(a) + 1];
     app.replaceChildren(
       el('article', { class: 'learn-article' }, [
-        el('a', { class: 'link-button', href: '#aprende', text: '← Todos los temas' }),
-        el('h2', { class: 'puzzle-title', text: a.title }),
+        el('a', { class: 'back-link', href: '#aprende' }, [svgIcon(ICONS.back, 'small'), document.createTextNode('Todos los temas')]),
+        el('h2', { class: 'page-title', text: a.title }),
         el('p', { class: 'lead', text: a.summary }),
         ...a.paragraphs.map((p) => el('p', { class: 'article-text', text: p })),
         el('h3', { class: 'section-title', text: 'Ejemplos' }),
@@ -354,6 +477,8 @@
         ),
         el('h3', { class: 'section-title', text: 'Algunas lenguas que lo usan' }),
         el('p', { class: 'chips' }, a.languages.map((l) => el('span', { class: 'chip static', text: l }))),
+        el('h3', { class: 'section-title', text: 'Para saber más' }),
+        externalLinks(a.links),
         levels.length
           ? el('div', {}, [
               el('h3', { class: 'section-title', text: 'Practícalo en el juego' }),
@@ -362,14 +487,11 @@
                 { class: 'level-list' },
                 levels.map((p) =>
                   el('li', {}, [
-                    el('a', { class: 'level-card', href: '#' + p.id }, [
-                      el('span', { class: 'level-number', text: String(PUZZLES.indexOf(p) + 1) }),
+                    el('a', { class: 'level-card', href: '#' + p.id, style: catStyle(p.category) }, [
+                      svgIcon(category(p.category).icon, 'badge'),
                       el('span', { class: 'level-info' }, [
                         el('span', { class: 'level-title', text: p.title }),
-                        el('span', {
-                          class: 'level-lang',
-                          text: TIERS.find((t) => t.id === p.tier).title + ' · Lengua: ' + p.language,
-                        }),
+                        el('span', { class: 'level-meta' }, [difficultyDots(p.difficulty), el('span', { text: category(p.category).title })]),
                       ]),
                     ]),
                   ])
@@ -377,7 +499,12 @@
               ),
             ])
           : null,
-        next ? el('a', { class: 'next-article', href: '#aprende-' + next.id, text: 'Siguiente tema: ' + next.title + ' →' }) : null,
+        next
+          ? el('a', { class: 'continue-link', href: '#aprende-' + next.id }, [
+              document.createTextNode('Siguiente tema: ' + next.title),
+              svgIcon(ICONS.next, 'small'),
+            ])
+          : null,
       ])
     );
   }
@@ -401,29 +528,24 @@
   function renderCorpus(puzzle, state) {
     if (Engine.corpusRevealed(puzzle, state)) {
       return el('section', { class: 'panel corpus-panel' }, [
-        el('h2', { text: 'Frases de ejemplo' }),
+        el('h2', { text: 'Ejemplos' }),
         el(
           'ol',
           { class: 'corpus' },
-          puzzle.corpus.map((s) =>
-            el('li', {}, [languageText(s.text), el('span', { class: 'translation', text: s.translation })])
-          )
+          puzzle.corpus.map((s) => el('li', {}, [languageText(s.text), el('span', { class: 'translation', text: s.translation })]))
         ),
       ]);
     }
     const order = Engine.scrambledOrder(puzzle);
     return el('section', { class: 'panel corpus-panel' }, [
-      el('h2', { text: 'Frases de ejemplo' }),
+      el('h2', { text: 'Ejemplos' }),
       el('ol', { class: 'corpus' }, puzzle.corpus.map((s) => el('li', {}, [languageText(s.text)]))),
       el('h2', { class: 'subheading', text: 'Traducciones (desordenadas)' }),
       el(
         'ul',
         { class: 'scrambled' },
         order.map((corpusIndex, position) =>
-          el('li', {}, [
-            el('span', { class: 'letter', text: Engine.letter(position) }),
-            el('span', { text: puzzle.corpus[corpusIndex].translation }),
-          ])
+          el('li', {}, [el('span', { class: 'letter', text: Engine.letter(position) }), el('span', { text: puzzle.corpus[corpusIndex].translation })])
         )
       ),
     ]);
@@ -475,9 +597,7 @@
       rerender();
     };
     const revealed = el('ul', { class: 'hint-list' }, [
-      ...state.revealedWords.map((m) =>
-        el('li', {}, [languageText(m), document.createTextNode(' = ' + puzzle.glossary[m])])
-      ),
+      ...state.revealedWords.map((m) => el('li', {}, [languageText(m), document.createTextNode(' = ' + puzzle.glossary[m])])),
       ...puzzle.rules.slice(0, state.revealedRules).map((r) => el('li', { text: r })),
     ]);
     return el('section', { class: 'panel hints-panel' }, [
@@ -511,10 +631,7 @@
       el(
         'dl',
         { class: 'dictionary' },
-        Object.entries(puzzle.glossary).flatMap(([morpheme, meaning]) => [
-          el('dt', {}, [languageText(morpheme)]),
-          el('dd', { text: meaning }),
-        ])
+        Object.entries(puzzle.glossary).flatMap(([morpheme, meaning]) => [el('dt', {}, [languageText(morpheme)]), el('dd', { text: meaning })])
       ),
       el('ul', { class: 'hint-list' }, puzzle.rules.map((r) => el('li', { text: r }))),
       analysed.length
@@ -531,6 +648,27 @@
     ]);
   }
 
+  // En qué lenguas reales se inspira el nivel. Antes de terminar va plegado porque da pistas.
+  function renderInspiration(puzzle, finished) {
+    if (!puzzle.inspiration) return null;
+    const body = [el('p', { text: puzzle.inspiration.text }), externalLinks(puzzle.inspiration.links)];
+    if (puzzle.topics && puzzle.topics.length) {
+      body.push(
+        el(
+          'p',
+          { class: 'topic-links' },
+          [el('span', { class: 'muted', text: 'En Aprende: ' })].concat(
+            puzzle.topics.map((id) => el('a', { class: 'chip', href: '#aprende-' + id, text: article(id).title }))
+          )
+        )
+      );
+    }
+    return el('details', { class: 'inspiration', open: finished }, [
+      el('summary', { text: finished ? '¿En qué se inspira este nivel?' : '¿En qué se inspira este nivel? (da pistas)' }),
+      ...body,
+    ]);
+  }
+
   // Contenido de una ficha: texto, o el dibujo del glifo.
   function tileAttrs(word, glyph, extra) {
     const attrs = Object.assign({}, extra);
@@ -544,11 +682,11 @@
     return attrs;
   }
 
-  function tileRow(words, feedback, glyph) {
+  function tileRow(words, feedback, glyph, animate) {
     return el(
       'div',
-      { class: 'tile-row' },
-      words.map((w, i) => el('span', tileAttrs(w, glyph, { class: 'tile ' + (feedback ? feedback[i] : '') })))
+      { class: 'tile-row' + (animate ? ' reveal' : '') },
+      words.map((w, i) => el('span', tileAttrs(w, glyph, { class: 'tile ' + (feedback ? feedback[i] : ''), style: '--i: ' + i })))
     );
   }
 
@@ -580,11 +718,13 @@
       onclick: () => {
         Engine.submitAttempt(puzzle, state, index, guess());
         selections[index] = undefined;
+        justChecked = index;
         saveState(state);
         if (Engine.isFinished(state) && current.daily) {
           writeJSON(STATS_KEY, Engine.updateStats(loadStats(), current.daily, Engine.computeStars(state)));
         }
         rerender();
+        justChecked = null;
         if (Engine.isFinished(state)) showResult(puzzle, state);
       },
       text: 'Comprobar',
@@ -607,11 +747,16 @@
     const prompt = el('p', { class: 'prompt' }, [
       toSpanish ? languageText(challenge.prompt, 'big') : el('span', { class: 'big', text: '«' + challenge.prompt + '»' }),
     ]);
+    const last = progress.attempts.length - 1;
     const history = el(
       'div',
       { class: 'history' },
-      progress.attempts.map((a) =>
-        el('div', { class: 'attempt' }, [tileRow(a.guess, a.feedback, glyph), free ? reading(a.guess) : null, lengthNote(a.lengthHint)])
+      progress.attempts.map((a, n) =>
+        el('div', { class: 'attempt' }, [
+          tileRow(a.guess, a.feedback, glyph, justChecked === index && n === last),
+          free ? reading(a.guess) : null,
+          lengthNote(a.lengthHint),
+        ])
       )
     );
     const body = [prompt, history];
@@ -634,7 +779,7 @@
       let answerRow;
       let full;
       if (free) {
-        // Con piezas, la longitud de la respuesta forma parte del puzzle.
+        // Con piezas o símbolos, la longitud de la respuesta forma parte del puzzle.
         answerRow = el(
           'div',
           { class: 'tile-row answer-row free', 'aria-label': 'Tu respuesta' },
@@ -704,10 +849,12 @@
     const history = el(
       'div',
       { class: 'history' },
-      progress.attempts.map((a) =>
+      progress.attempts.map((a, n) =>
         tileRow(
           a.guess.map((l, i) => i + 1 + l),
-          a.feedback
+          a.feedback,
+          false,
+          justChecked === index && n === progress.attempts.length - 1
         )
       )
     );
@@ -760,7 +907,9 @@
     const tried = progress.attempts.map((a) => a.guess[0]);
     const done = progress.status !== 'playing';
 
-    const options = challenge.options.map((option, i) => {
+    // Las opciones se muestran barajadas; cada botón conserva su índice original.
+    const options = Engine.optionOrder(puzzle, index).map((i) => {
+      const option = challenge.options[i];
       const value = String(i);
       let mark = '';
       if (done && i === challenge.correct) mark = 'correct';
@@ -788,9 +937,7 @@
       el('div', { class: 'options' }, options),
     ];
     if (!done) {
-      body.push(
-        el('div', { class: 'button-row' }, [submitButton(puzzle, state, index, () => selected.slice(), selected.length === 1, rerender)])
-      );
+      body.push(el('div', { class: 'button-row' }, [submitButton(puzzle, state, index, () => selected.slice(), selected.length === 1, rerender)]));
     }
     return body;
   }
@@ -834,11 +981,17 @@
     const puzzle = game.puzzle;
     currentScript = puzzle.script || null;
     const state = loadState(puzzle, game.key);
-    const tier = TIERS.find((t) => t.id === puzzle.tier);
-    const eyebrow = game.daily
-      ? 'Reto diario · Descifra #' + game.daily + ' · Lengua: ' + puzzle.language
-      : 'Nivel ' + (PUZZLES.indexOf(puzzle) + 1) + (tier ? ' · ' + tier.title : '') + ' · Lengua: ' + puzzle.language;
+    const cat = puzzle.category ? category(puzzle.category) : null;
+    const position = cat ? levelsIn(cat.id).indexOf(puzzle) + 1 : 0;
     let confirmingReset = false;
+
+    const eyebrow = game.daily
+      ? el('p', { class: 'eyebrow', text: 'Reto diario · Descifra #' + game.daily + ' · ' + DAILY_LABELS[Engine.dailyDifficulty(game.daily) - 1] })
+      : el('p', { class: 'eyebrow puzzle-eyebrow' }, [
+          el('a', { class: 'chip', href: '#cat-' + cat.id }, [svgIcon(cat.icon, 'small'), document.createTextNode(' ' + cat.title)]),
+          el('span', { text: 'Nivel ' + position + ' de ' + levelsIn(cat.id).length }),
+          difficultyDots(puzzle.difficulty),
+        ]);
 
     // Confirmación dentro de la página (no se usa confirm() del navegador).
     // El reto diario no se puede reiniciar: hay un solo intento al día.
@@ -872,7 +1025,7 @@
           type: 'button',
           class: 'primary',
           onclick: () => {
-            clearState(game.key);
+            clearKey(game.key);
             selections = {};
             renderPuzzle(game);
           },
@@ -885,12 +1038,12 @@
       const scroll = window.scrollY;
       const finished = Engine.isFinished(state);
       app.replaceChildren(
-        el('section', { class: 'puzzle' }, [
+        el('section', { class: 'puzzle', style: cat ? catStyle(cat.id) : null }, [
           el('div', { class: 'puzzle-header' }, [
-            el('p', { class: 'eyebrow', text: eyebrow }),
-            el('h2', { class: 'puzzle-title', text: puzzle.title }),
+            eyebrow,
+            el('h2', { class: 'page-title', text: puzzle.title }),
             el('p', { class: 'lead', text: puzzle.intro }),
-            finished ? topicLinks(puzzle.topics) : null,
+            renderInspiration(puzzle, finished),
           ]),
           el('div', { class: 'columns' }, [
             el('div', { class: 'column' }, [
@@ -931,10 +1084,7 @@
   }
 
   function statBox(value, label) {
-    return el('div', { class: 'stat' }, [
-      el('span', { class: 'stat-value', text: String(value) }),
-      el('span', { class: 'stat-label', text: label }),
-    ]);
+    return el('div', { class: 'stat' }, [el('span', { class: 'stat-value', text: String(value) }), el('span', { class: 'stat-label', text: label })]);
   }
 
   function learnButton(puzzle) {
@@ -1012,7 +1162,8 @@
       return;
     }
     const stars = Engine.computeStars(state);
-    const next = PUZZLES[PUZZLES.indexOf(puzzle) + 1];
+    const levels = levelsIn(puzzle.category);
+    const next = levels[levels.indexOf(puzzle) + 1];
     const solved = state.challenges.filter((c) => c.status === 'solved').length;
     const message =
       stars === 3
@@ -1027,7 +1178,7 @@
       el('p', { text: message }),
       el('p', {
         class: 'muted',
-        text: 'Pistas usadas: ' + Engine.hintsUsed(state) + '. Junto a las frases tienes ahora la solución completa.',
+        text: 'Pistas usadas: ' + Engine.hintsUsed(state) + '. Ahora puedes ver la solución completa y en qué lenguas reales se inspira el nivel.',
       }),
       learnButton(puzzle),
       el('div', { class: 'button-row end' }, [
@@ -1037,13 +1188,77 @@
           class: 'primary',
           onclick: () => {
             dialog.close();
-            location.hash = next ? next.id : '';
+            location.hash = next ? next.id : 'cat-' + puzzle.category;
           },
-          text: next ? 'Siguiente nivel' : 'Volver al inicio',
+          text: next ? 'Siguiente nivel' : 'Volver a la categoría',
         }),
       ])
     );
     dialog.showModal();
+  }
+
+  // ---------- Ajustes ----------
+
+  function renderSettings() {
+    let confirming = false;
+    const body = settingsDialog.querySelector('.dialog-body');
+
+    function draw() {
+      const toggle = el('input', {
+        id: 'setting-highlight',
+        type: 'checkbox',
+        class: 'switch',
+        onchange: (event) => {
+          settings.highlight = event.target.checked;
+          writeJSON(SETTINGS_KEY, settings);
+          pinnedWord = null;
+          setHighlight(null);
+          document.body.classList.toggle('highlight-on', settings.highlight);
+        },
+      });
+      toggle.checked = settings.highlight;
+      body.replaceChildren(
+        el('h2', { text: 'Ajustes' }),
+        el('div', { class: 'setting' }, [
+          el('label', { for: 'setting-highlight', class: 'setting-label' }, [
+            el('span', { class: 'setting-title', text: 'Resaltar palabras iguales' }),
+            el('span', {
+              class: 'muted',
+              text: 'Al pasar el ratón o tocar una palabra o un símbolo, se marcan todas sus apariciones. Facilita los niveles.',
+            }),
+          ]),
+          toggle,
+        ]),
+        el('div', { class: 'setting danger' }, [
+          el('span', { class: 'setting-label' }, [
+            el('span', { class: 'setting-title', text: 'Borrar todo el progreso' }),
+            el('span', { class: 'muted', text: 'Borra estrellas, notas, rachas y estadísticas de este navegador.' }),
+          ]),
+          confirming
+            ? el('span', { class: 'button-row' }, [
+                el('button', { type: 'button', class: 'secondary', onclick: () => ((confirming = false), draw()), text: 'Cancelar' }),
+                el('button', {
+                  type: 'button',
+                  class: 'primary danger',
+                  onclick: () => {
+                    clearAllProgress();
+                    confirming = false;
+                    settingsDialog.close();
+                    route();
+                  },
+                  text: 'Sí, borrar',
+                }),
+              ])
+            : el('button', { type: 'button', class: 'secondary', onclick: () => ((confirming = true), draw()), text: 'Borrar' }),
+        ]),
+        el('div', { class: 'button-row end' }, [
+          el('button', { type: 'button', class: 'primary', onclick: () => settingsDialog.close(), text: 'Listo' }),
+        ])
+      );
+    }
+
+    draw();
+    settingsDialog.showModal();
   }
 
   // ---------- Navegación ----------
@@ -1062,6 +1277,8 @@
       renderLearnIndex();
     } else if (hash.startsWith('aprende-') && article(hash.slice(8))) {
       renderArticle(article(hash.slice(8)));
+    } else if (hash.startsWith('cat-') && category(hash.slice(4))) {
+      renderCategory(category(hash.slice(4)));
     } else {
       const puzzle = PUZZLES.find((p) => p.id === hash);
       if (puzzle) renderPuzzle({ puzzle, key: puzzle.id, daily: null });
@@ -1070,10 +1287,12 @@
     window.scrollTo(0, 0);
   }
 
+  document.body.classList.toggle('highlight-on', settings.highlight);
   dialog.addEventListener('close', () => clearInterval(countdownTimer));
   homeButton.addEventListener('click', () => {
     location.hash = '';
   });
+  settingsButton.addEventListener('click', renderSettings);
   window.addEventListener('hashchange', route);
   route();
 })();

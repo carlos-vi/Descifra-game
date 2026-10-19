@@ -65,6 +65,29 @@
       },
     },
 
+    // Braille básico: cada letra es una celda de 2 × 3 posiciones (1-2-3 a la
+    // izquierda, 4-5-6 a la derecha, de arriba abajo).
+    braille: {
+      viewBox: '0 0 20 30',
+      compositional: true,
+      glyph(id) {
+        const cells = {
+          a: '1', b: '12', c: '14', d: '145', e: '15', f: '124', g: '1245', h: '125', i: '24', j: '245',
+          k: '13', l: '123', m: '134', n: '1345', o: '135', p: '1234', q: '12345', r: '1235', s: '234', t: '2345',
+          u: '136', v: '1236', w: '2456', x: '1346', y: '13456', z: '1356',
+        };
+        if (!Object.prototype.hasOwnProperty.call(cells, id)) return null;
+        const positions = { 1: [6, 6], 2: [6, 15], 3: [6, 24], 4: [14, 6], 5: [14, 15], 6: [14, 24] };
+        return Object.entries(positions)
+          .map(([dot, [x, y]]) =>
+            cells[id].includes(dot)
+              ? `<circle cx="${x}" cy="${y}" r="3.2" ${FILLED}/>`
+              : `<circle cx="${x}" cy="${y}" r="1.2" fill="currentColor" stroke="none" opacity="0.3"/>`
+          )
+          .join('');
+      },
+    },
+
     // Numerales mayas: m0 a m19. Puntos valen 1, barras 5 y la concha 0.
     maya: {
       viewBox: '0 0 32 32',
