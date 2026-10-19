@@ -95,6 +95,30 @@
       languages: ['Turco', 'Finés', 'Húngaro', 'Mongol'],
     },
     {
+      id: 'compuestos',
+      title: 'Palabras compuestas',
+      summary: 'Unir dos palabras para crear una nueva: «mano-zapato» es guante y «fuego-montaña», volcán.',
+      paragraphs: [
+        'Todas las lenguas crean palabras nuevas juntando otras. El español lo hace a veces («sacacorchos», «bocacalle»), ' +
+          'pero en alemán, chino o finés es la forma normal de crear vocabulario.',
+        'En cada compuesto hay una palabra principal y otra que la precisa. En español la principal suele ir primero (una «bocacalle» es una boca de la calle); ' +
+          'en alemán o en chino va al final: un «Handschuh», literalmente «mano-zapato», es un zapato para la mano, un guante.',
+        'La poesía germánica antigua llevó esto al extremo con los «kennings», metáforas compuestas: en inglés antiguo, el mar era el «camino de la ballena».',
+      ],
+      examples: [
+        { language: 'Alemán', words: [['Hand-schuh', 'mano-zapato']], translation: 'guante' },
+        { language: 'Chino mandarín', words: [['huǒ-shān', 'fuego-montaña']], translation: 'volcán' },
+        {
+          language: 'Chino mandarín',
+          words: [['diàn-nǎo', 'electricidad-cerebro']],
+          translation: 'ordenador',
+          note: 'Muchas palabras modernas del chino se forman así, juntando palabras antiguas.',
+        },
+        { language: 'Inglés antiguo', words: [['hron-rād', 'ballena-camino']], translation: 'el mar (en poesía)' },
+      ],
+      languages: ['Alemán', 'Chino mandarín', 'Finés', 'Inglés antiguo', 'Islandés'],
+    },
+    {
       id: 'ergatividad',
       title: 'Ergatividad',
       summary: 'Quien llega o duerme se marca igual que quien recibe un golpe, y distinto de quien lo da.',
@@ -269,6 +293,34 @@
       languages: ['Indonesio', 'Tagalo', 'Hawaiano', 'Quechua', 'Aimara', 'Tamil'],
     },
     {
+      id: 'parentesco',
+      title: 'Sistemas de parentesco',
+      summary: 'Cada lengua divide la familia a su manera: hay lenguas que llaman «padre» al tío y «hermanos» a algunos primos.',
+      paragraphs: [
+        'En español, «tío» sirve para el hermano del padre, el de la madre y hasta el marido de una tía. Muchas lenguas son más precisas, y otras lo son menos.',
+        'En el sistema que los antropólogos llaman iroqués, por los pueblos haudenosaunee de Norteamérica, el hermano del padre se llama igual que el padre ' +
+          'y la hermana de la madre igual que la madre. Sus hijos son «hermanos», mientras que los hijos del hermano de la madre o de la hermana del padre ' +
+          '(los primos cruzados) tienen un nombre propio.',
+        'El hawaiano va más lejos: todos los primos se llaman como los hermanos y todos los tíos como los padres. ' +
+          'El chino, en cambio, tiene una palabra distinta para cada tío y cada tía según el lado de la familia y la edad.',
+      ],
+      examples: [
+        {
+          language: 'Hawaiano',
+          words: [['makua-kāne', 'progenitor-varón']],
+          translation: 'padre (y también tío)',
+        },
+        { language: 'Chino mandarín', words: [['jiùjiu', 'hermano de la madre']], translation: 'tío materno' },
+        { language: 'Chino mandarín', words: [['gūgu', 'hermana del padre']], translation: 'tía paterna' },
+        {
+          language: 'Chino mandarín',
+          words: [['shūshu', 'hermano menor del padre']],
+          translation: 'tío paterno (más joven que el padre)',
+        },
+      ],
+      languages: ['Hawaiano', 'Chino mandarín', 'Lenguas iroquesas', 'Sueco', 'Hindi'],
+    },
+    {
       id: 'numeros',
       title: 'Contar de otra manera',
       summary: 'No todas las lenguas cuentan de diez en diez: hay sistemas de base 20, de base 5 y otras sorpresas.',
@@ -278,6 +330,8 @@
           'El francés conserva restos de ese sistema: 80 es «quatre-vingts», cuatro veintes.',
         'Hay sistemas de base 5 y de base 12, y lenguas de Papúa Nueva Guinea que cuentan señalando partes del cuerpo. ' +
           'Las operaciones también varían: el yoruba usa restas, y 15 se dice como «veinte menos cinco».',
+        'Los mayas escribían los números con puntos (1), barras (5) y una concha (0), apilados en pisos que valen 1, 20, 400… ' +
+          'Fueron de las primeras culturas en usar el cero. Los babilonios, en cambio, contaban en base 60, y de ahí vienen los 60 minutos de una hora.',
         'Al descifrar números, busca primero las palabras que multiplican y las que suman, y comprueba tu hipótesis con todos los ejemplos.',
       ],
       examples: [
@@ -300,7 +354,7 @@
           note: 'Veinte es «una cuenta completa».',
         },
       ],
-      languages: ['Euskera', 'Náhuatl', 'Maya yucateco', 'Yoruba', 'Francés', 'Georgiano'],
+      languages: ['Euskera', 'Náhuatl', 'Maya', 'Yoruba', 'Francés', 'Georgiano', 'Babilonio'],
     },
     {
       id: 'tiempo',
@@ -340,6 +394,42 @@
         { language: 'Árabe', words: [['kātib', 'escritor (raíz k-t-b)']], translation: 'escritor' },
       ],
       languages: ['Tagalo', 'Indonesio', 'Árabe', 'Hebreo'],
+    },
+    {
+      id: 'escrituras',
+      title: 'Escrituras del mundo',
+      summary: 'Alfabetos, silabarios, escrituras sin vocales y signos que representan palabras enteras.',
+      paragraphs: [
+        'Una escritura puede representar la lengua de maneras muy distintas. Los alfabetos, como el latino, el griego o el cirílico, tienen un signo por sonido. ' +
+          'Los abyads, como el árabe y el hebreo, escriben sobre todo las consonantes y dejan que el lector ponga las vocales.',
+        'En los silabarios cada signo es una sílaba: los kana japoneses, o el silabario cherokee que Sequoyah inventó hacia 1821. ' +
+          'En las escrituras logográficas, como la china, muchos signos representan palabras enteras: 木 es «árbol», 林 (dos árboles) es «bosque».',
+        'Los jeroglíficos egipcios mezclaban todo: signos que eran palabras, signos que valían solo por su sonido y determinativos, signos mudos que indicaban la categoría de la palabra. ' +
+          'Champollion los descifró en 1822 gracias a la piedra de Rosetta, que tenía el mismo texto en jeroglífico, en demótico y en griego. ' +
+          'Su clave fueron los nombres de reyes encerrados en cartuchos, como Ptolomeo y Cleopatra: sabía cómo sonaban y pudo comparar sus signos.',
+        'Un siglo después, Michael Ventris descifró en 1952 la escritura lineal B de Creta, un silabario, y descubrió que escondía una forma muy antigua del griego.',
+      ],
+      examples: [
+        {
+          language: 'Japonés (hiragana)',
+          words: [['か', 'ka'], ['き', 'ki']],
+          translation: 'kaki, «caqui»',
+          note: 'Cada signo es una sílaba.',
+        },
+        {
+          language: 'Chino',
+          words: [['木', 'árbol'], ['林', 'bosque'], ['森', 'bosque espeso']],
+          translation: 'un árbol, dos árboles, tres árboles',
+          note: 'Algunos caracteres combinan otros: más árboles, más bosque.',
+        },
+        {
+          language: 'Árabe',
+          words: [['كتب', 'k-t-b']],
+          translation: 'kataba, «escribió», o kutub, «libros»',
+          note: 'Se escriben las consonantes; las vocales se deducen por el contexto.',
+        },
+      ],
+      languages: ['Japonés', 'Chino', 'Árabe', 'Hebreo', 'Cherokee', 'Egipcio antiguo', 'Griego micénico'],
     },
   ];
 

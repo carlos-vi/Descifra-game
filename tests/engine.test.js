@@ -100,7 +100,49 @@ test('segment separa raíces y sufijos', () => {
 
 // ---------- Validación de los puzzles ----------
 
-const TIERS = ['iniciacion', 'intermedio', 'avanzado', 'olimpiada'];
+const TIERS = ['iniciacion', 'intermedio', 'avanzado', 'olimpiada', 'escrituras'];
+const Scripts = require('../js/scripts.js');
+
+// Comprobaciones de los puzzles escritos con glifos.
+function checkScriptPuzzle(puzzle) {
+  const script = Scripts.SCRIPTS[puzzle.script];
+  assert.ok(script, `escritura "${puzzle.script}" desconocida`);
+  const glyphsIn = (text) => Engine.tokenize(text).flatMap((w) => Engine.glyphsOf(w));
+  const assertDrawable = (glyph, where) =>
+    assert.ok(Scripts.glyphMarkup(puzzle.script, glyph), `glifo "${glyph}" (${where}) sin dibujo`);
+
+  const corpusGlyphs = new Set();
+  const corpusWords = new Set();
+  for (const sentence of puzzle.corpus) {
+    Engine.tokenize(sentence.text).forEach((w) => corpusWords.add(w));
+    glyphsIn(sentence.text).forEach((g) => {
+      assertDrawable(g, 'corpus');
+      corpusGlyphs.add(g);
+    });
+  }
+  for (const key of Object.keys(puzzle.glossary)) {
+    assert.ok(corpusGlyphs.has(key) || corpusWords.has(key), `"${key}" del glosario no aparece en el corpus`);
+  }
+  // Los glifos de los retos deben verse en el corpus, salvo en escrituras que se entienden por partes.
+  const assertKnown = (glyph, where) => {
+    assertDrawable(glyph, where);
+    if (!script.compositional) assert.ok(corpusGlyphs.has(glyph), `glifo "${glyph}" (${where}) no aparece en el corpus`);
+  };
+  puzzle.challenges.forEach((challenge, index) => {
+    const where = `reto ${index + 1}`;
+    if (challenge.display) glyphsIn(challenge.display).forEach((g) => assertKnown(g, where));
+    if (challenge.type === 'to-spanish') glyphsIn(challenge.prompt).forEach((g) => assertKnown(g, where));
+    if (challenge.type === 'to-language') {
+      assert.ok(challenge.glyphs, `${where}: en una escritura, las fichas son glifos`);
+      challenge.answer.forEach((g) => assertKnown(g, where));
+      challenge.distractors.forEach((g) => assertDrawable(g, where));
+    }
+    if (challenge.type === 'choice') {
+      assert.ok(challenge.correct >= 0 && challenge.correct < challenge.options.length);
+      if (challenge.optionsLanguage) challenge.options.forEach((o) => glyphsIn(o).forEach((g) => assertKnown(g, where)));
+    }
+  });
+}
 
 // Morfemas de una palabra del corpus: con la segmentación escrita si la hay.
 function corpusWordMorphemes(puzzle, word, segmentedWord) {
@@ -117,6 +159,14 @@ for (const puzzle of ALL_PUZZLES) {
     assert.ok(puzzle.corpus.length >= 3, 'al menos 3 frases de ejemplo');
     assert.ok(puzzle.rules.length >= 1, 'al menos una regla');
     if (LEVELS.includes(puzzle)) assert.ok(TIERS.includes(puzzle.tier), 'nivel con grupo de dificultad');
+
+    if (puzzle.script) {
+      checkScriptPuzzle(puzzle);
+      const state = Engine.newState(puzzle);
+      puzzle.challenges.forEach((_, i) => Engine.submitAttempt(puzzle, state, i, Engine.challengeAnswer(puzzle, i)));
+      assert.equal(Engine.computeStars(state), 3);
+      return;
+    }
 
     // Todos los morfemas que aparecen en el corpus están en el glosario...
     const corpusMorphemes = new Set();
@@ -153,6 +203,7 @@ for (const puzzle of ALL_PUZZLES) {
         case 'choice':
           assert.ok(challenge.prompt && challenge.options.length >= 2);
           assert.ok(challenge.correct >= 0 && challenge.correct < challenge.options.length);
+          if (challenge.display) Engine.tokenize(challenge.display).forEach((w) => assertDeducible(w, where));
           if (challenge.optionsLanguage) {
             challenge.options.forEach((o) => Engine.tokenize(o).forEach((w) => assertDeducible(w, where)));
           }
@@ -203,10 +254,29 @@ test('dayNumber empieza en 1 y avanza con los días locales', () => {
   assert.equal(Engine.dayNumber(new Date(2026, 0, 1)), 1);
 });
 
-test('dailyPuzzle recorre el banco y vuelve a empezar', () => {
-  assert.equal(Engine.dailyPuzzle(1, DAILY_PUZZLES), DAILY_PUZZLES[0]);
-  assert.equal(Engine.dailyPuzzle(DAILY_PUZZLES.length, DAILY_PUZZLES), DAILY_PUZZLES[DAILY_PUZZLES.length - 1]);
-  assert.equal(Engine.dailyPuzzle(DAILY_PUZZLES.length + 1, DAILY_PUZZLES), DAILY_PUZZLES[0]);
+test('el reto diario va de fácil el lunes a difícil el domingo', () => {
+  // El #1 (19 de octubre de 2026) es lunes.
+  assert.equal(new Date(2026, 9, 19).getDay(), 1);
+  assert.equal(Engine.dailyDifficulty(1), 1);
+  assert.equal(Engine.dailyDifficulty(7), 7);
+  assert.equal(Engine.dailyDifficulty(8), 1);
+  for (let n = 1; n <= 14; n++) {
+    assert.equal(Engine.dailyPuzzle(n, DAILY_PUZZLES).difficulty, Engine.dailyDifficulty(n));
+  }
+});
+
+test('con varios puzzles de la misma dificultad, rotan cada semana', () => {
+  const pool = [
+    { id: 'a', difficulty: 1 },
+    { id: 'b', difficulty: 1 },
+  ];
+  assert.equal(Engine.dailyPuzzle(1, pool).id, 'a');
+  assert.equal(Engine.dailyPuzzle(8, pool).id, 'b');
+  assert.equal(Engine.dailyPuzzle(15, pool).id, 'a');
+});
+
+test('cada dificultad del 1 al 7 tiene al menos un reto diario', () => {
+  for (let d = 1; d <= 7; d++) assert.ok(DAILY_PUZZLES.some((p) => p.difficulty === d), `falta dificultad ${d}`);
 });
 
 test('msUntilNextDay cuenta hasta la medianoche local', () => {
@@ -343,4 +413,57 @@ test('cada tema de los puzzles tiene su artículo', () => {
   for (const puzzle of ALL_PUZZLES) {
     for (const topic of puzzle.topics || []) assert.ok(ids.has(topic), `${puzzle.id}: tema "${topic}" sin artículo`);
   }
+});
+
+// ---------- Escrituras y compuestos ----------
+
+test('readAs une las fichas según el tipo de reto', () => {
+  assert.equal(Engine.readAs({ glyphs: true }, ['ma', 'ri']), 'ma.ri');
+  assert.equal(Engine.readAs({ morphemes: true, compound: true }, ['nam', 'ten']), 'namten');
+  assert.equal(Engine.readAs({ morphemes: true }, ['tam', '-ne', 'dum']), 'tamne dum');
+  assert.equal(Engine.readAs({}, ['el', 'perro']), 'el perro');
+});
+
+test('segment y parseSegmented reconocen palabras compuestas', () => {
+  const kenna = LEVELS.find((p) => p.id === 'kenna');
+  assert.deepEqual(Engine.segment('kumnam', kenna.glossary), ['kum', 'nam']);
+  assert.deepEqual(Engine.parseSegmented('sel-pira', kenna.glossary), ['sel', 'pira']);
+});
+
+test('los numerales mayas se dibujan del 0 al 19 y no más allá', () => {
+  for (let n = 0; n < 20; n++) assert.ok(Scripts.glyphMarkup('maya', 'm' + n));
+  assert.equal(Scripts.glyphMarkup('maya', 'm20'), null);
+  assert.equal(Scripts.glyphMarkup('maya', 'x1'), null);
+  // 13 = dos barras y tres puntos.
+  const svg = Scripts.glyphMarkup('maya', 'm13');
+  assert.equal((svg.match(/<rect/g) || []).length, 2);
+  assert.equal((svg.match(/<circle/g) || []).length, 3);
+});
+
+test('los valores del nivel maya son coherentes con la base 20', () => {
+  const maya = LEVELS.find((p) => p.id === 'maya');
+  const value = (word) => Engine.glyphsOf(word).reduce((acc, g) => acc * 20 + Number(g.slice(1)), 0);
+  maya.corpus.forEach((s) => assert.equal(String(value(s.text)), s.translation));
+  maya.challenges.forEach((c) => {
+    if (c.type === 'choice') assert.equal(String(value(c.display)), c.options[c.correct]);
+    else assert.equal(String(value(Engine.joinGlyphs(c.answer))), c.prompt);
+  });
+});
+
+test('los números del nivel senka son coherentes con la base 6', () => {
+  const senka = LEVELS.find((p) => p.id === 'senka');
+  const units = { ul: 1, tu: 2, sar: 3, mok: 4, pen: 5 };
+  const value = (text) =>
+    text.split(' ne ').reduce((sum, part) => {
+      const words = part.split(' ');
+      const last = words[words.length - 1];
+      const base = last === 'tak' ? 6 : last === 'nuru' ? 36 : null;
+      if (base === null) return sum + units[last];
+      return sum + (words.length > 1 ? units[words[0]] : 1) * base;
+    }, 0);
+  senka.corpus.forEach((s) => assert.equal(String(value(s.text)), s.translation));
+  senka.challenges.forEach((c) => {
+    if (c.type === 'choice') assert.equal(String(value(/«(.+)»/.exec(c.prompt)[1])), c.options[c.correct]);
+    if (c.type === 'to-language') assert.equal(String(value(c.answer.join(' '))), c.prompt);
+  });
 });

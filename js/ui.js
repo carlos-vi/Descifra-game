@@ -13,6 +13,21 @@
     { id: 'intermedio', title: 'Intermedio', description: 'Varias reglas a la vez y fichas de piezas sueltas.' },
     { id: 'avanzado', title: 'Avanzado', description: 'Gramáticas sin equivalente en español.' },
     { id: 'olimpiada', title: 'Olimpiada', description: 'Traducciones desordenadas: primero hay que emparejarlas.' },
+    {
+      id: 'escrituras',
+      title: 'Escrituras',
+      description: 'Descifra símbolos: un alfabeto, números mayas, sílabas y jeroglíficos, de más fácil a más difícil.',
+    },
+  ];
+
+  const DAILY_LABELS = [
+    'Lunes · muy fácil',
+    'Martes · fácil',
+    'Miércoles · media',
+    'Jueves · media',
+    'Viernes · difícil',
+    'Sábado · muy difícil',
+    'Domingo · el más difícil',
   ];
 
   // Selección en curso, por reto: índices de fichas, letras elegidas u opción marcada.
@@ -21,6 +36,8 @@
   // Partida abierta: { puzzle, key, daily (número del reto diario o null) }.
   let current = null;
   let countdownTimer = null;
+  // Escritura de glifos del puzzle abierto (null si se escribe con letras).
+  let currentScript = null;
 
   // ---------- Guardado ----------
 
@@ -77,6 +94,7 @@
     Object.entries(attrs || {}).forEach(([key, value]) => {
       if (key === 'class') node.className = value;
       else if (key === 'text') node.textContent = value;
+      else if (key === 'html') node.innerHTML = value;
       else if (key.startsWith('on')) node.addEventListener(key.slice(2), value);
       else if (value !== false && value != null) node.setAttribute(key, value === true ? '' : value);
     });
@@ -84,6 +102,11 @@
       if (child != null) node.append(child);
     });
     return node;
+  }
+
+  // «el kenna», o «la escritura» en los niveles de glifos.
+  function subject(puzzle) {
+    return puzzle.script ? 'la escritura' : 'el ' + puzzle.language;
   }
 
   function starsText(stars) {
@@ -94,8 +117,23 @@
     return ARTICLES.find((a) => a.id === id);
   }
 
+  function glyphNode(glyph) {
+    return el('span', { class: 'lang-word lang-glyph', 'data-word': glyph, html: Scripts.glyphSvg(currentScript, glyph) });
+  }
+
+  // Palabras escritas con glifos: cada glifo se resalta por separado.
+  function glyphText(text, extraClass) {
+    const script = Scripts.SCRIPTS[currentScript];
+    const classes = ['glyph-word', script.rtl ? 'rtl' : '', script.vertical ? 'vertical' : '', script.cartouche ? 'cartouche' : '']
+      .filter(Boolean)
+      .join(' ');
+    const words = Engine.tokenize(text).map((word) => el('span', { class: classes }, Engine.glyphsOf(word).map(glyphNode)));
+    return el('span', { class: 'lang-text glyph-text ' + (extraClass || ''), role: 'img', 'aria-label': 'Texto en símbolos' }, words);
+  }
+
   // Palabras de la lengua, resaltables al pasar el ratón o al tocarlas.
   function languageText(text, extraClass) {
+    if (currentScript) return glyphText(text, extraClass);
     const words = Engine.tokenize(text);
     const children = [];
     words.forEach((word, i) => {
@@ -167,7 +205,7 @@
       : el('span', { class: 'daily-cta', text: started ? 'Continuar' : 'Jugar' });
     return el('a', { class: 'level-card daily-card', href: '#hoy' }, [
       el('span', { class: 'level-info' }, [
-        el('span', { class: 'eyebrow', text: 'Reto diario · Descifra #' + number }),
+        el('span', { class: 'eyebrow', text: 'Reto diario · Descifra #' + number + ' · ' + DAILY_LABELS[Engine.dailyDifficulty(number) - 1] }),
         el('span', { class: 'level-title', text: puzzle.title }),
         el('span', {
           class: 'level-lang',
@@ -346,15 +384,18 @@
 
   // ---------- Pantalla de juego ----------
 
+  // Palabras del cuaderno; en las escrituras, cada glifo por separado.
   function notebookWords(puzzle) {
     const seen = [];
     const add = (text) =>
-      Engine.tokenize(text).forEach((w) => {
-        if (!seen.includes(w)) seen.push(w);
-      });
+      Engine.tokenize(text)
+        .flatMap((w) => (puzzle.script ? Engine.glyphsOf(w) : [w]))
+        .forEach((w) => {
+          if (!seen.includes(w)) seen.push(w);
+        });
     puzzle.corpus.forEach((s) => add(s.text));
     puzzle.challenges.filter((c) => c.type === 'to-spanish').forEach((c) => add(c.prompt));
-    return seen.sort((a, b) => a.localeCompare(b, 'es'));
+    return puzzle.script ? seen : seen.sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   function renderCorpus(puzzle, state) {
@@ -466,7 +507,7 @@
   function renderDictionary(puzzle) {
     const analysed = puzzle.corpus.filter((s) => s.segmented);
     return el('section', { class: 'panel dictionary-panel' }, [
-      el('h2', { text: 'Diccionario del ' + puzzle.language }),
+      el('h2', { text: puzzle.script ? 'Clave de la escritura' : 'Diccionario del ' + puzzle.language }),
       el(
         'dl',
         { class: 'dictionary' },
@@ -490,11 +531,24 @@
     ]);
   }
 
-  function tileRow(words, feedback) {
+  // Contenido de una ficha: texto, o el dibujo del glifo.
+  function tileAttrs(word, glyph, extra) {
+    const attrs = Object.assign({}, extra);
+    if (glyph) {
+      attrs.html = Scripts.glyphSvg(currentScript, word);
+      attrs['aria-label'] = 'símbolo';
+      attrs.class = (attrs.class || 'tile') + ' glyph-tile';
+    } else {
+      attrs.text = word;
+    }
+    return attrs;
+  }
+
+  function tileRow(words, feedback, glyph) {
     return el(
       'div',
       { class: 'tile-row' },
-      words.map((w, i) => el('span', { class: 'tile ' + (feedback ? feedback[i] : ''), text: w }))
+      words.map((w, i) => el('span', tileAttrs(w, glyph, { class: 'tile ' + (feedback ? feedback[i] : '') })))
     );
   }
 
@@ -511,8 +565,9 @@
       case 'choice':
         return prefix + 'Pregunta';
       case 'to-spanish':
-        return prefix + 'Traduce al español';
+        return prefix + (puzzle.script ? 'Lee la inscripción' : 'Traduce al español');
       default:
+        if (puzzle.script) return prefix + 'Escríbelo con símbolos';
         return prefix + 'Traduce al ' + puzzle.language + (challenge.morphemes ? ' pieza a pieza' : '');
     }
   }
@@ -542,7 +597,12 @@
     const tiles = Engine.buildTiles(puzzle, index);
     const selected = selections[index] || (selections[index] = []);
     const toSpanish = challenge.type === 'to-spanish';
-    const free = Boolean(challenge.morphemes);
+    const glyph = Boolean(challenge.glyphs);
+    const free = Boolean(challenge.morphemes || glyph);
+    const reading = (pieces) =>
+      glyph
+        ? el('div', { class: 'reads-as' }, [document.createTextNode('Se escribe: '), languageText(Engine.readAs(challenge, pieces))])
+        : el('p', { class: 'reads-as', text: 'Se lee: ' + Engine.readAs(challenge, pieces) });
 
     const prompt = el('p', { class: 'prompt' }, [
       toSpanish ? languageText(challenge.prompt, 'big') : el('span', { class: 'big', text: '«' + challenge.prompt + '»' }),
@@ -551,27 +611,25 @@
       'div',
       { class: 'history' },
       progress.attempts.map((a) =>
-        el('div', { class: 'attempt' }, [
-          tileRow(a.guess, a.feedback),
-          free ? el('p', { class: 'reads-as muted', text: 'Se lee: ' + Engine.joinMorphemes(a.guess) }) : null,
-          lengthNote(a.lengthHint),
-        ])
+        el('div', { class: 'attempt' }, [tileRow(a.guess, a.feedback, glyph), free ? reading(a.guess) : null, lengthNote(a.lengthHint)])
       )
     );
     const body = [prompt, history];
 
     if (progress.status === 'playing') {
       const chosen = selected.map((tileIndex, pos) =>
-        el('button', {
-          type: 'button',
-          class: 'tile chosen',
-          text: tiles[tileIndex],
-          title: 'Quitar',
-          onclick: () => {
-            selected.splice(pos, 1);
-            rerender();
-          },
-        })
+        el(
+          'button',
+          tileAttrs(tiles[tileIndex], glyph, {
+            type: 'button',
+            class: 'tile chosen',
+            title: 'Quitar',
+            onclick: () => {
+              selected.splice(pos, 1);
+              rerender();
+            },
+          })
+        )
       );
       let answerRow;
       let full;
@@ -580,7 +638,9 @@
         answerRow = el(
           'div',
           { class: 'tile-row answer-row free', 'aria-label': 'Tu respuesta' },
-          chosen.length ? chosen : [el('span', { class: 'placeholder', text: 'Pulsa las piezas en orden…' })]
+          chosen.length
+            ? chosen
+            : [el('span', { class: 'placeholder', text: glyph ? 'Pulsa los símbolos en orden de lectura…' : 'Pulsa las piezas en orden…' })]
         );
         full = false;
       } else {
@@ -593,16 +653,18 @@
         'div',
         { class: 'tile-row pool' },
         tiles.map((word, tileIndex) =>
-          el('button', {
-            type: 'button',
-            class: 'tile',
-            text: word,
-            disabled: selected.includes(tileIndex) || full,
-            onclick: () => {
-              selected.push(tileIndex);
-              rerender();
-            },
-          })
+          el(
+            'button',
+            tileAttrs(word, glyph, {
+              type: 'button',
+              class: 'tile',
+              disabled: selected.includes(tileIndex) || full,
+              onclick: () => {
+                selected.push(tileIndex);
+                rerender();
+              },
+            })
+          )
         )
       );
       const actions = el('div', { class: 'button-row' }, [
@@ -618,23 +680,14 @@
         }),
         submitButton(puzzle, state, index, () => selected.map((i) => tiles[i]), free ? selected.length > 0 : full, rerender),
       ]);
-      body.push(
-        answerRow,
-        free && selected.length
-          ? el('p', { class: 'reads-as', text: 'Se lee: ' + Engine.joinMorphemes(selected.map((i) => tiles[i])) })
-          : null,
-        pool,
-        actions
-      );
+      body.push(answerRow, free && selected.length ? reading(selected.map((i) => tiles[i])) : null, pool, actions);
     } else if (progress.status === 'failed') {
       const answer = challenge.answer;
       body.push(
         el('p', { class: 'solution' }, [
           document.createTextNode('Solución: '),
-          toSpanish
-            ? el('strong', { text: answer.join(' ') })
-            : languageText(free ? Engine.joinMorphemes(answer) : answer.join(' ')),
-          free ? el('span', { class: 'muted', text: ' (' + answer.join(' ') + ')' }) : null,
+          toSpanish ? el('strong', { text: answer.join(' ') }) : languageText(Engine.readAs(challenge, answer)),
+          challenge.morphemes ? el('span', { class: 'muted', text: ' (' + answer.join(' ') + ')' }) : null,
         ])
       );
     }
@@ -729,7 +782,11 @@
       );
     });
 
-    const body = [el('p', { class: 'prompt question', text: challenge.prompt }), el('div', { class: 'options' }, options)];
+    const body = [
+      el('p', { class: 'prompt question', text: challenge.prompt }),
+      challenge.display ? el('p', { class: 'prompt' }, [languageText(challenge.display, 'big')]) : null,
+      el('div', { class: 'options' }, options),
+    ];
     if (!done) {
       body.push(
         el('div', { class: 'button-row' }, [submitButton(puzzle, state, index, () => selected.slice(), selected.length === 1, rerender)])
@@ -775,6 +832,7 @@
     homeButton.hidden = false;
     current = game;
     const puzzle = game.puzzle;
+    currentScript = puzzle.script || null;
     const state = loadState(puzzle, game.key);
     const tier = TIERS.find((t) => t.id === puzzle.tier);
     const eyebrow = game.daily
@@ -909,7 +967,7 @@
 
     dialog.querySelector('.dialog-body').replaceChildren(
       el('p', { class: 'eyebrow', text: 'Descifra #' + number }),
-      el('h2', { text: stars > 0 ? 'Has descifrado el ' + puzzle.language : 'El ' + puzzle.language + ' se resiste' }),
+      el('h2', { text: stars > 0 ? 'Has descifrado ' + subject(puzzle) : 'Se te ha resistido ' + subject(puzzle) }),
       el('p', { class: 'result-stars', 'aria-label': stars + ' de 3 estrellas', text: starsText(stars) }),
       el('div', { class: 'stats' }, [
         statBox(stats.played, 'Jugados'),
@@ -958,9 +1016,9 @@
     const solved = state.challenges.filter((c) => c.status === 'solved').length;
     const message =
       stars === 3
-        ? '¡Perfecto! Has descifrado el ' + puzzle.language + ' sin ayuda.'
+        ? '¡Perfecto! Has descifrado ' + subject(puzzle) + ' sin ayuda.'
         : stars > 0
-        ? 'Has descifrado el ' + puzzle.language + '.'
+        ? 'Has descifrado ' + subject(puzzle) + '.'
         : 'Has resuelto ' + solved + ' de ' + puzzle.challenges.length + ' retos. Puedes reiniciar el nivel y volver a intentarlo.';
 
     dialog.querySelector('.dialog-body').replaceChildren(
@@ -969,7 +1027,7 @@
       el('p', { text: message }),
       el('p', {
         class: 'muted',
-        text: 'Pistas usadas: ' + Engine.hintsUsed(state) + '. Junto a las frases tienes ahora el diccionario completo.',
+        text: 'Pistas usadas: ' + Engine.hintsUsed(state) + '. Junto a las frases tienes ahora la solución completa.',
       }),
       learnButton(puzzle),
       el('div', { class: 'button-row end' }, [
@@ -994,6 +1052,7 @@
     selections = {};
     pinnedWord = null;
     current = null;
+    currentScript = null;
     if (dialog.open) dialog.close();
     const hash = location.hash.slice(1);
     if (hash === 'hoy') {

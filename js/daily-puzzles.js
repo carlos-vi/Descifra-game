@@ -1,11 +1,13 @@
-// Banco de puzzles del reto diario. Mismo formato que js/puzzles.js.
-// Cada día toca el siguiente; al acabarse, vuelve a empezar.
+// Banco de puzzles del reto diario. Mismo formato que js/puzzles.js, más
+// "difficulty": de 1 (lunes, el más fácil) a 7 (domingo, el más difícil).
+// Cada día se elige un puzzle de su dificultad; con varios, rotan cada semana.
 (function (root) {
   'use strict';
 
   const DAILY_PUZZLES = [
     {
       id: 'diario-veru',
+      difficulty: 3,
       topics: ['orden'],
       title: 'La acción primero',
       language: 'veru',
@@ -51,6 +53,7 @@
     },
     {
       id: 'diario-amara',
+      difficulty: 1,
       topics: ['aglutinacion'],
       title: 'Decir que no',
       language: 'amara',
@@ -95,6 +98,7 @@
     },
     {
       id: 'diario-tesh',
+      difficulty: 5,
       topics: ['posesion'],
       title: '¿De quién es?',
       language: 'tesh',
@@ -142,6 +146,7 @@
     },
     {
       id: 'diario-nuvi',
+      difficulty: 4,
       topics: ['polipersonal'],
       title: 'Yo, tú y él',
       language: 'nuvi',
@@ -188,6 +193,7 @@
     },
     {
       id: 'diario-korra',
+      difficulty: 2,
       topics: ['aglutinacion'],
       title: 'Dónde ocurre',
       language: 'korra',
@@ -235,6 +241,7 @@
     },
     {
       id: 'diario-lomba',
+      difficulty: 7,
       topics: ['numeros'],
       title: 'Contar con la mano',
       language: 'lomba',
@@ -283,6 +290,7 @@
     },
     {
       id: 'diario-sumu',
+      difficulty: 6,
       topics: ['orden'],
       title: 'Orden libre',
       language: 'sumu',

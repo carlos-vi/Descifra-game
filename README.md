@@ -11,11 +11,13 @@ Abre `index.html` en el navegador. No necesita instalación ni servidor.
 ## Modos de juego
 
 - **Reto diario** (`#hoy`): una lengua nueva cada día, la misma para todos, numerada como
-  «Descifra #N». Se juega una vez al día; al terminar se puede copiar el resultado para
+  «Descifra #N». Como el crucigrama del New York Times, el lunes es el más fácil y el
+  domingo el más difícil. Se juega una vez al día; al terminar se puede copiar el resultado para
   compartirlo sin desvelar la solución, y se guardan la racha y las estadísticas.
   Los puzzles salen de `js/daily-puzzles.js` y se repiten cuando se acaba el banco.
-- **Niveles**: 12 lenguas en cuatro grupos de dificultad (Iniciación, Intermedio,
-  Avanzado y Olimpiada) que se pueden reiniciar. Los avanzados usan fichas de piezas
+- **Niveles**: 18 niveles en cinco grupos (Iniciación, Intermedio, Avanzado, Olimpiada
+  y Escrituras) que se pueden reiniciar. Escrituras incluye un alfabeto de símbolos,
+  numerales mayas, un silabario con cartuchos y jeroglíficos. Los avanzados usan fichas de piezas
   sueltas («ni-», «-ne»), preguntas de opción múltiple y, en Olimpiada, traducciones
   desordenadas que primero hay que emparejar.
 - **Aprende** (`#aprende`): artículos sobre los fenómenos gramaticales de los niveles
@@ -37,6 +39,7 @@ js/engine.js     lógica del juego (sin DOM, probada con Node)
 js/puzzles.js    niveles de práctica y explicación del formato de los puzzles
 js/daily-puzzles.js  banco de puzzles del reto diario
 js/learn.js      artículos de la sección Aprende
+js/scripts.js    glifos de las escrituras inventadas (dibujos SVG)
 js/ui.js         interfaz
 tests/           tests automáticos
 ```

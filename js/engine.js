@@ -80,6 +80,15 @@
     return text.trim().split(/\s+/).filter(Boolean);
   }
 
+  // En las escrituras de glifos, una palabra es una lista de glifos unida por puntos.
+  function glyphsOf(word) {
+    return word.split('.');
+  }
+
+  function joinGlyphs(pieces) {
+    return pieces.join('.');
+  }
+
   // Une fichas de morfemas en palabras: "ni-" se pega a la siguiente y "-ne" a la anterior.
   function joinMorphemes(pieces) {
     let text = '';
@@ -93,6 +102,14 @@
       glueNext = isPrefix;
     });
     return text;
+  }
+
+  // Cómo se lee una respuesta hecha con fichas, según el tipo de reto.
+  function readAs(challenge, pieces) {
+    if (challenge.glyphs) return joinGlyphs(pieces);
+    if (challenge.compound) return pieces.join('');
+    if (challenge.morphemes) return joinMorphemes(pieces);
+    return pieces.join(' ');
   }
 
   // Corrección al estilo Wordle: "correct" (sitio correcto), "present"
@@ -240,6 +257,13 @@
   function segment(word, glossary) {
     if (hasKey(glossary, word)) return [word];
     const keys = Object.keys(glossary);
+    // Palabras compuestas: raíz + resto.
+    for (const root of keys.filter((k) => !k.includes('-'))) {
+      if (word.length > root.length && word.startsWith(root)) {
+        const rest = segment(word.slice(root.length), glossary);
+        if (rest) return [root].concat(rest);
+      }
+    }
     for (const suffix of keys.filter((k) => k.length > 1 && k.startsWith('-'))) {
       const bare = suffix.slice(1);
       if (word.length > bare.length && word.endsWith(bare)) {
@@ -257,14 +281,19 @@
     return null;
   }
 
-  // Interpreta una palabra ya segmentada con guiones ("ni-ti-sal-e"): la raíz va
-  // sin guiones, los prefijos antes y los sufijos después. Devuelve null si algún
-  // trozo no está en el glosario.
+  // Interpreta una palabra ya segmentada con guiones ("ni-ti-sal-e"): las raíces van
+  // sin guiones, los prefijos antes de la primera y los sufijos después. Admite
+  // compuestos de varias raíces ("nam-tok"). Devuelve null si algún trozo no está
+  // en el glosario.
   function parseSegmented(word, glossary) {
     const parts = word.split('-');
     const rootIndex = parts.findIndex((p) => hasKey(glossary, p));
     if (rootIndex === -1) return null;
-    const morphemes = parts.map((p, i) => (i < rootIndex ? p + '-' : i > rootIndex ? '-' + p : p));
+    const morphemes = parts.map((p, i) => {
+      if (i < rootIndex) return p + '-';
+      if (i === rootIndex) return p;
+      return hasKey(glossary, '-' + p) ? '-' + p : p;
+    });
     return morphemes.every((m) => hasKey(glossary, m)) ? morphemes : null;
   }
 
@@ -291,8 +320,18 @@
     return Math.max(1, Math.round((today - epoch) / MS_PER_DAY) + 1);
   }
 
+  // Como el crucigrama del New York Times: el lunes es el más fácil y el domingo
+  // el más difícil. El reto #1 cae en lunes, así que el día de la semana sale del número.
+  function dailyDifficulty(number) {
+    return ((number - 1) % 7) + 1;
+  }
+
+  // Elige el puzzle del día entre los de su dificultad, rotando cada semana.
   function dailyPuzzle(number, pool) {
-    return pool[(number - 1) % pool.length];
+    const difficulty = dailyDifficulty(number);
+    const candidates = pool.filter((p) => p.difficulty === difficulty);
+    if (!candidates.length) return pool[(number - 1) % pool.length];
+    return candidates[Math.floor((number - 1) / 7) % candidates.length];
   }
 
   function msUntilNextDay(date) {
@@ -342,13 +381,17 @@
     challengeAnswer,
     maxAttempts,
     joinMorphemes,
+    readAs,
     evaluate,
     isLocked,
     corpusRevealed,
     parseSegmented,
     glossSentence,
     dayNumber,
+    dailyDifficulty,
     dailyPuzzle,
+    glyphsOf,
+    joinGlyphs,
     msUntilNextDay,
     shareText,
     emptyStats,

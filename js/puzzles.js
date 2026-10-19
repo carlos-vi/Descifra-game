@@ -13,7 +13,11 @@
 //   opciones están en la lengua (por ejemplo, para buscar la frase incorrecta).
 //   "match": emparejar el corpus con sus traducciones; requiere scrambled: true y
 //   debe ser el primer reto.
-// - tier: iniciacion, intermedio, avanzado u olimpiada.
+// - tier: iniciacion, intermedio, avanzado, olimpiada o escrituras.
+// - script: escritura de glifos (js/scripts.js). Las palabras se escriben como
+//   glifos unidos por puntos ("ma.ri.na") y los retos to-language usan glyphs: true.
+// - display (en "choice"): texto en la lengua que se muestra con la pregunta.
+// - compound (con morphemes): las piezas forman una sola palabra compuesta.
 // - topics: artículos de la sección Aprende relacionados (js/learn.js).
 // - corpus[].segmented: la frase con los morfemas separados por guiones. Se usa
 //   para comprobar el puzzle y para mostrar el análisis al terminar.
@@ -470,6 +474,85 @@
         },
       ],
     },
+    {
+      id: 'kenna',
+      tier: 'intermedio',
+      topics: ['compuestos'],
+      title: 'Palabras que se juntan',
+      language: 'kenna',
+      intro:
+        'Los kenna tienen pocas palabras, pero las combinan para nombrar casi cualquier cosa. ' +
+        'Descubre cómo se forman sus palabras compuestas.',
+      corpus: [
+        { text: 'nam', translation: 'agua' },
+        { text: 'tok', translation: 'ojo' },
+        { text: 'namtok', segmented: 'nam-tok', translation: 'lágrima' },
+        { text: 'kum', translation: 'montaña' },
+        { text: 'vel', translation: 'fuego' },
+        { text: 'kumvel', segmented: 'kum-vel', translation: 'volcán' },
+        { text: 'sel', translation: 'casa' },
+        { text: 'selpira', segmented: 'sel-pira', translation: 'nido' },
+        { text: 'sellibu', segmented: 'sel-libu', translation: 'biblioteca' },
+        { text: 'ten', translation: 'cielo' },
+      ],
+      glossary: {
+        nam: 'agua',
+        tok: 'ojo',
+        kum: 'montaña',
+        vel: 'fuego',
+        sel: 'casa',
+        pira: 'pájaro',
+        libu: 'libro',
+        ten: 'cielo',
+      },
+      rules: [
+        'Las palabras compuestas se forman uniendo dos raíces.',
+        'Primero va la cosa y después «de qué» es: «nam-tok», agua del ojo, es una lágrima.',
+      ],
+      challenges: [
+        {
+          type: 'choice',
+          prompt: '¿Qué significa esta palabra?',
+          display: 'kumnam',
+          options: ['una ola (una montaña de agua)', 'un río (el agua de la montaña)', 'un lago', 'una nube'],
+          correct: 0,
+        },
+        {
+          type: 'choice',
+          prompt: '¿Y esta?',
+          display: 'tokten',
+          options: ['el sol', 'una nube', 'la lluvia', 'un pájaro'],
+          correct: 0,
+        },
+        {
+          type: 'to-language',
+          morphemes: true,
+          compound: true,
+          prompt: 'la lluvia (el agua del cielo)',
+          answer: ['nam', 'ten'],
+          distractors: ['tok', 'kum', 'sel'],
+        },
+        {
+          type: 'to-language',
+          morphemes: true,
+          compound: true,
+          prompt: 'un fénix (un pájaro de fuego)',
+          answer: ['pira', 'vel'],
+          distractors: ['sel', 'tok', 'ten'],
+        },
+        {
+          type: 'choice',
+          prompt: '¿En qué orden se forman las palabras compuestas en kenna?',
+          options: [
+            'Primero la cosa y después «de qué» es',
+            'Primero «de qué» es y después la cosa',
+            'El orden da igual',
+            'Depende de si es un ser vivo',
+          ],
+          correct: 0,
+        },
+      ],
+    },
     // ---------- Avanzado ----------
     {
       id: 'ikoa',
@@ -599,6 +682,83 @@
             'Que la acción ocurrió en el pasado',
             'Que algo es mío',
             'Que la frase es una pregunta',
+          ],
+          correct: 0,
+        },
+      ],
+    },
+    {
+      id: 'oruna',
+      tier: 'avanzado',
+      topics: ['parentesco'],
+      title: 'La familia de Ana',
+      language: 'oruna',
+      intro:
+        'Ana habla oruna y nos ha contado cómo llama a cada miembro de su familia. ' +
+        'Los oruna no dividen la familia como nosotros: descubre su lógica.',
+      corpus: [
+        { text: 'aba', translation: 'Luis, el padre de Ana' },
+        { text: 'aba', translation: 'Pablo, el hermano del padre de Ana' },
+        { text: 'ena', translation: 'Eva, la madre de Ana' },
+        { text: 'kodo', translation: 'Jorge, el hermano de la madre de Ana' },
+        { text: 'ruta', translation: 'Rosa, la hermana del padre de Ana' },
+        { text: 'sibo', translation: 'Tomás, el hermano de Ana' },
+        { text: 'sibo', translation: 'Dani, el hijo de Pablo' },
+        { text: 'mari', translation: 'Leo, el hijo de Rosa' },
+        { text: 'mari', translation: 'Lía, la hija de Rosa' },
+        { text: 'sila', translation: 'Nora, la hija de Marta, la hermana de la madre de Ana' },
+      ],
+      glossary: {
+        aba: 'padre, o hermano del padre',
+        ena: 'madre, o hermana de la madre',
+        kodo: 'hermano de la madre',
+        ruta: 'hermana del padre',
+        sibo: 'hermano, o primo paralelo',
+        sila: 'hermana, o prima paralela',
+        mari: 'primo o prima cruzados',
+      },
+      rules: [
+        'El hermano del padre se llama igual que el padre, y la hermana de la madre igual que la madre.',
+        'Los hijos de quienes se llaman «aba» o «ena» son como hermanos: «sibo» o «sila».',
+        'Los hijos de «kodo» y de «ruta» son «mari», sean chicos o chicas.',
+      ],
+      challenges: [
+        {
+          type: 'choice',
+          prompt: '¿Cómo llama Ana a Marta, la hermana de su madre?',
+          optionsLanguage: true,
+          options: ['ena', 'ruta', 'kodo', 'sila'],
+          correct: 0,
+        },
+        {
+          type: 'choice',
+          prompt: '¿Y a Iker, el hijo de Marta?',
+          optionsLanguage: true,
+          options: ['mari', 'sibo', 'aba', 'kodo'],
+          correct: 1,
+        },
+        {
+          type: 'choice',
+          prompt: '¿Y a Sara, la hija de Jorge?',
+          optionsLanguage: true,
+          options: ['sila', 'mari', 'ena', 'ruta'],
+          correct: 1,
+        },
+        {
+          type: 'choice',
+          prompt: '¿Cómo llama Dani, el hijo de Pablo, a Ana?',
+          optionsLanguage: true,
+          options: ['sila', 'mari', 'sibo', 'ena'],
+          correct: 0,
+        },
+        {
+          type: 'choice',
+          prompt: '¿Qué tienen en común las personas a las que Ana llama «mari»?',
+          options: [
+            'Son hijos del hermano de la madre o de la hermana del padre',
+            'Son hijos de cualquier tío o tía',
+            'Son de la familia de la madre',
+            'Son más pequeños que Ana',
           ],
           correct: 0,
         },
@@ -735,6 +895,280 @@
           type: 'choice',
           prompt: '¿Qué número es «sar nuru ne pen tak ne sar»?',
           options: ['141', '138', '147', '129'],
+          correct: 0,
+        },
+      ],
+    },
+    // ---------- Escrituras ----------
+    {
+      id: 'runas',
+      tier: 'escrituras',
+      topics: ['escrituras'],
+      script: 'runas',
+      title: 'Un alfabeto nuevo',
+      language: 'español en runas',
+      intro:
+        'En una cueva aparecen palabras talladas con símbolos desconocidos. Al lado, alguien escribió lo que dicen. ' +
+        'Descubre qué letra es cada símbolo.',
+      corpus: [
+        { text: 's.o.l', translation: 'sol' },
+        { text: 'l.u.n.a', translation: 'luna' },
+        { text: 'm.a.r', translation: 'mar' },
+        { text: 'c.a.s.a', translation: 'casa' },
+        { text: 't.r.e.n', translation: 'tren' },
+        { text: 'm.i.e.l', translation: 'miel' },
+      ],
+      glossary: {
+        a: 'la letra a',
+        c: 'la letra c',
+        e: 'la letra e',
+        i: 'la letra i',
+        l: 'la letra l',
+        m: 'la letra m',
+        n: 'la letra n',
+        o: 'la letra o',
+        r: 'la letra r',
+        s: 'la letra s',
+        t: 'la letra t',
+        u: 'la letra u',
+      },
+      rules: [
+        'Cada símbolo es una letra y el texto está en español.',
+        'Se lee de izquierda a derecha y las tildes no se escriben.',
+      ],
+      challenges: [
+        {
+          type: 'to-spanish',
+          prompt: 'r.i.s.a',
+          answer: ['risa'],
+          distractors: ['rosa', 'misa', 'casa'],
+        },
+        {
+          type: 'to-spanish',
+          prompt: 'l.a s.a.l',
+          answer: ['la', 'sal'],
+          distractors: ['el', 'sol', 'las'],
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: 'mesa',
+          answer: ['m', 'e', 's', 'a'],
+          distractors: ['o', 'n', 'r'],
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: 'limón',
+          answer: ['l', 'i', 'm', 'o', 'n'],
+          distractors: ['a', 'e', 'u'],
+        },
+      ],
+    },
+    {
+      id: 'maya',
+      tier: 'escrituras',
+      topics: ['numeros', 'escrituras'],
+      script: 'maya',
+      title: 'Puntos y barras',
+      language: 'numerales mayas',
+      intro:
+        'Los mayas escribían los números con solo tres símbolos, apilados en pisos. ' +
+        'Estos son algunos números con su valor. Descubre el sistema.',
+      corpus: [
+        { text: 'm3', translation: '3' },
+        { text: 'm7', translation: '7' },
+        { text: 'm15', translation: '15' },
+        { text: 'm1.m0', translation: '20' },
+        { text: 'm1.m6', translation: '26' },
+        { text: 'm2.m13', translation: '53' },
+        { text: 'm10.m0', translation: '200' },
+      ],
+      glossary: {
+        m3: 'tres puntos: 3',
+        m15: 'tres barras: 15',
+        m0: 'la concha: 0',
+        'm1.m0': 'un 1 en el piso de arriba y un 0 abajo: 20',
+      },
+      rules: [
+        'Un punto vale 1 y una barra vale 5; se suman.',
+        'La concha es el cero.',
+        'Los números se apilan en pisos: el de abajo cuenta unidades y el de arriba, veintenas.',
+      ],
+      challenges: [
+        {
+          type: 'choice',
+          prompt: '¿Qué número es este?',
+          display: 'm3.m12',
+          options: ['72', '75', '312', '65'],
+          correct: 0,
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: '45',
+          answer: ['m2', 'm5'],
+          distractors: ['m4', 'm0', 'm9'],
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: '100',
+          answer: ['m5', 'm0'],
+          distractors: ['m1', 'm10', 'm4'],
+        },
+        {
+          type: 'choice',
+          prompt: '¿Y este, con tres pisos?',
+          display: 'm1.m0.m0',
+          options: ['400', '200', '100', '120'],
+          correct: 0,
+        },
+      ],
+    },
+    {
+      id: 'cartuchos',
+      tier: 'escrituras',
+      topics: ['escrituras'],
+      script: 'silabas',
+      title: 'Nombres en cartuchos',
+      language: 'escritura silábica',
+      intro:
+        'Como hizo Champollion con los jeroglíficos, empieza por los nombres propios: van dentro de un marco ' +
+        'y sabes cómo suenan. Cada símbolo es una sílaba, pero cuidado con el sentido de la escritura.',
+      corpus: [
+        { text: 'ma.ri.na', translation: 'Marina' },
+        { text: 'ka.ri.na', translation: 'Karina' },
+        { text: 'ma.ri.o', translation: 'Mario' },
+        { text: 'ro.sa', translation: 'Rosa' },
+        { text: 'ro.mi.na', translation: 'Romina' },
+        { text: 'ni.ko', translation: 'Niko' },
+      ],
+      glossary: {
+        ma: 'la sílaba ma',
+        ri: 'la sílaba ri',
+        na: 'la sílaba na',
+        ka: 'la sílaba ka',
+        o: 'la vocal o',
+        ro: 'la sílaba ro',
+        sa: 'la sílaba sa',
+        mi: 'la sílaba mi',
+        ni: 'la sílaba ni',
+        ko: 'la sílaba ko',
+      },
+      rules: [
+        'Cada símbolo es una sílaba.',
+        'Los nombres propios van dentro de un marco, como los cartuchos egipcios.',
+        'Se lee de derecha a izquierda.',
+      ],
+      challenges: [
+        {
+          type: 'to-spanish',
+          prompt: 'ma.ri.sa',
+          answer: ['Marisa'],
+          distractors: ['Sarima', 'Marina', 'Rosa'],
+        },
+        {
+          type: 'to-spanish',
+          prompt: 'ni.na',
+          answer: ['Nina'],
+          distractors: ['Nani', 'Niko', 'Mina'],
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: 'Roma',
+          answer: ['ro', 'ma'],
+          distractors: ['sa', 'mi', 'na'],
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: 'Mariko',
+          answer: ['ma', 'ri', 'ko'],
+          distractors: ['ka', 'ni', 'o'],
+        },
+        {
+          type: 'choice',
+          prompt: '¿En qué dirección se lee esta escritura?',
+          options: ['De derecha a izquierda', 'De izquierda a derecha', 'De arriba abajo', 'Cambia en cada palabra'],
+          correct: 0,
+        },
+      ],
+    },
+    {
+      id: 'jeroglificos',
+      tier: 'escrituras',
+      topics: ['escrituras'],
+      script: 'jeroglificos',
+      title: 'Dibujos que suenan',
+      language: 'jeroglíficos',
+      intro:
+        'Esta escritura mezcla tres tipos de signos, como los jeroglíficos egipcios: dibujos que se leen como palabras, ' +
+        'dibujos que se leen solo por su sonido y signos que no se leen. Junto a cada inscripción está su pronunciación.',
+      corpus: [
+        { text: 'sol.trazo', translation: 'ra: «sol»' },
+        { text: 'casa.trazo', translation: 'pe: «casa»' },
+        { text: 'ojo.trazo', translation: 'ti: «ojo»' },
+        { text: 'pajaro.sol.persona', translation: 'Mara, una mujer' },
+        { text: 'pie.casa.agua', translation: 'Supe, un río' },
+        { text: 'ojo.pajaro.ciudad', translation: 'Tima, una ciudad' },
+        { text: 'pie.ojo.persona', translation: 'Suti, un hombre' },
+      ],
+      glossary: {
+        sol: 'sol; como sonido, «ra»',
+        casa: 'casa; como sonido, «pe»',
+        ojo: 'ojo; como sonido, «ti»',
+        pajaro: 'pájaro; como sonido, «ma»',
+        pie: 'pie; como sonido, «su»',
+        trazo: 'indica que el dibujo anterior se lee como palabra',
+        persona: 'no se lee: indica que es una persona',
+        agua: 'no se lee: indica que es un río',
+        ciudad: 'no se lee: indica que es una ciudad',
+      },
+      rules: [
+        'Cada dibujo puede leerse por su sonido: el del nombre de lo que representa. El sol se dice «ra», así que suena ra.',
+        'Un trazo vertical detrás de un dibujo indica que se lee como palabra: «sol», no el sonido ra.',
+        'El último signo de un nombre no se lee: indica si es una persona, un río o una ciudad.',
+      ],
+      challenges: [
+        {
+          type: 'choice',
+          prompt: '¿Qué está escrito aquí?',
+          display: 'casa.sol.ciudad',
+          options: ['Pera, una ciudad', 'Pera, una mujer', 'Rape, una ciudad', 'la casa del sol'],
+          correct: 0,
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: 'Rasu, un río',
+          answer: ['sol', 'pie', 'agua'],
+          distractors: ['persona', 'ciudad', 'trazo', 'casa'],
+        },
+        {
+          type: 'to-language',
+          glyphs: true,
+          prompt: 'Tira, un hombre',
+          answer: ['ojo', 'sol', 'persona'],
+          distractors: ['trazo', 'ciudad', 'pajaro'],
+        },
+        {
+          type: 'choice',
+          prompt: '¿Y esto?',
+          display: 'pajaro.trazo',
+          options: ['«pájaro»', 'Mara, una mujer', 'Ma, una ciudad', '«sol»'],
+          correct: 0,
+        },
+        {
+          type: 'choice',
+          prompt: '¿Para qué sirve el último signo de «Mara» y de «Suti»?',
+          options: [
+            'Indica que el nombre es de una persona y no se lee',
+            'Se lee «ka»',
+            'Indica plural',
+            'Marca el final de la frase',
+          ],
           correct: 0,
         },
       ],
