@@ -230,6 +230,33 @@
     return el('span', { class: 'lang-text ' + (extraClass || '') }, children);
   }
 
+  // Activa o desactiva el resaltado. Se guarda como preferencia para todos los niveles.
+  function setHighlightSetting(on) {
+    settings.highlight = on;
+    writeJSON(SETTINGS_KEY, settings);
+    pinnedWord = null;
+    setHighlight(null);
+    document.body.classList.toggle('highlight-on', on);
+    document.querySelectorAll('.highlight-switch').forEach((input) => {
+      input.checked = on;
+    });
+  }
+
+  // Interruptor visible en cada nivel.
+  function highlightToggle(id) {
+    const input = el('input', {
+      id,
+      type: 'checkbox',
+      class: 'switch highlight-switch',
+      onchange: (event) => setHighlightSetting(event.target.checked),
+    });
+    input.checked = settings.highlight;
+    return el('label', { class: 'highlight-toggle', for: id, title: 'Marca todas las apariciones de la palabra que señalas' }, [
+      el('span', { text: 'Resaltar iguales' }),
+      input,
+    ]);
+  }
+
   function setHighlight(word) {
     document.querySelectorAll('.lang-word.highlight').forEach((n) => n.classList.remove('highlight'));
     if (!word || !settings.highlight) return;
@@ -363,7 +390,7 @@
           el('li', { text: 'Verde: ficha correcta en su sitio. Amarillo: la ficha va, pero en otro sitio. Gris: no va.' }),
           el('li', { text: 'Las piezas como «ni-» se unen a lo que va detrás, y las como «-ne», a lo que va delante.' }),
           el('li', { text: 'Los fallos y las pistas restan estrellas. Si agotas los intentos de un reto, el nivel acaba sin estrellas.' }),
-          el('li', { text: 'En Ajustes puedes activar el resaltado de palabras iguales.' }),
+          el('li', { text: 'Con el interruptor «Resaltar iguales» de cada nivel, al señalar una palabra se marcan todas sus apariciones.' }),
         ]),
       ])
     );
@@ -463,18 +490,30 @@
         el('a', { class: 'back-link', href: '#aprende' }, [svgIcon(ICONS.back, 'small'), document.createTextNode('Todos los temas')]),
         el('h2', { class: 'page-title', text: a.title }),
         el('p', { class: 'lead', text: a.summary }),
-        ...a.paragraphs.map((p) => el('p', { class: 'article-text', text: p })),
-        el('h3', { class: 'section-title', text: 'Ejemplos' }),
-        el(
-          'div',
-          { class: 'examples' },
-          a.examples.map((ex) =>
-            el('div', { class: 'example' }, [
-              interlinear(ex.words, ex.translation, ex.language),
-              ex.note ? el('p', { class: 'muted example-note', text: ex.note }) : null,
-            ])
-          )
-        ),
+        // En el ordenador, el texto y los ejemplos a la izquierda y el resto en una columna lateral.
+        el('div', { class: 'article-layout' }, [
+          el('div', { class: 'article-main' }, [
+            ...a.paragraphs.map((p) => el('p', { class: 'article-text', text: p })),
+            el('h3', { class: 'section-title', text: 'Ejemplos' }),
+            el(
+              'div',
+              { class: 'examples' },
+              a.examples.map((ex) =>
+                el('div', { class: 'example' }, [
+                  interlinear(ex.words, ex.translation, ex.language),
+                  ex.note ? el('p', { class: 'muted example-note', text: ex.note }) : null,
+                ])
+              )
+            ),
+          ]),
+          el('aside', { class: 'article-aside' }, articleAside(a, levels, next)),
+        ]),
+      ])
+    );
+  }
+
+  function articleAside(a, levels, next) {
+    return [
         el('h3', { class: 'section-title', text: 'Algunas lenguas que lo usan' }),
         el('p', { class: 'chips' }, a.languages.map((l) => el('span', { class: 'chip static', text: l }))),
         el('h3', { class: 'section-title', text: 'Para saber más' }),
@@ -505,8 +544,7 @@
               svgIcon(ICONS.next, 'small'),
             ])
           : null,
-      ])
-    );
+    ];
   }
 
   // ---------- Pantalla de juego ----------
@@ -528,7 +566,7 @@
   function renderCorpus(puzzle, state) {
     if (Engine.corpusRevealed(puzzle, state)) {
       return el('section', { class: 'panel corpus-panel' }, [
-        el('h2', { text: 'Ejemplos' }),
+        el('div', { class: 'panel-header' }, [el('h2', { text: 'Ejemplos' }), highlightToggle('highlight-toggle')]),
         el(
           'ol',
           { class: 'corpus' },
@@ -538,7 +576,7 @@
     }
     const order = Engine.scrambledOrder(puzzle);
     return el('section', { class: 'panel corpus-panel' }, [
-      el('h2', { text: 'Ejemplos' }),
+      el('div', { class: 'panel-header' }, [el('h2', { text: 'Ejemplos' }), highlightToggle('highlight-toggle')]),
       el('ol', { class: 'corpus' }, puzzle.corpus.map((s) => el('li', {}, [languageText(s.text)]))),
       el('h2', { class: 'subheading', text: 'Traducciones (desordenadas)' }),
       el(
@@ -1207,14 +1245,8 @@
       const toggle = el('input', {
         id: 'setting-highlight',
         type: 'checkbox',
-        class: 'switch',
-        onchange: (event) => {
-          settings.highlight = event.target.checked;
-          writeJSON(SETTINGS_KEY, settings);
-          pinnedWord = null;
-          setHighlight(null);
-          document.body.classList.toggle('highlight-on', settings.highlight);
-        },
+        class: 'switch highlight-switch',
+        onchange: (event) => setHighlightSetting(event.target.checked),
       });
       toggle.checked = settings.highlight;
       body.replaceChildren(
@@ -1224,7 +1256,8 @@
             el('span', { class: 'setting-title', text: 'Resaltar palabras iguales' }),
             el('span', {
               class: 'muted',
-              text: 'Al pasar el ratón o tocar una palabra o un símbolo, se marcan todas sus apariciones. Facilita los niveles.',
+              text:
+                'Al pasar el ratón o tocar una palabra o un símbolo, se marcan todas sus apariciones. También puedes cambiarlo con el interruptor de cada nivel.',
             }),
           ]),
           toggle,
