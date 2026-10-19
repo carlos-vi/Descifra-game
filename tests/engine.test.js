@@ -100,8 +100,15 @@ test('segment separa raíces y sufijos', () => {
 
 // ---------- Validación de los puzzles ----------
 
-function languageWords(challenge) {
-  return challenge.type === 'to-spanish' ? Engine.tokenize(challenge.prompt) : challenge.answer;
+const TIERS = ['iniciacion', 'intermedio', 'avanzado', 'olimpiada'];
+
+// Morfemas de una palabra del corpus: con la segmentación escrita si la hay.
+function corpusWordMorphemes(puzzle, word, segmentedWord) {
+  if (segmentedWord) {
+    assert.equal(segmentedWord.replace(/-/g, ''), word, `"${segmentedWord}" no coincide con "${word}"`);
+    return Engine.parseSegmented(segmentedWord, puzzle.glossary);
+  }
+  return Engine.segment(word, puzzle.glossary);
 }
 
 for (const puzzle of ALL_PUZZLES) {
@@ -109,42 +116,73 @@ for (const puzzle of ALL_PUZZLES) {
     assert.ok(puzzle.id && puzzle.title && puzzle.language && puzzle.intro);
     assert.ok(puzzle.corpus.length >= 3, 'al menos 3 frases de ejemplo');
     assert.ok(puzzle.rules.length >= 1, 'al menos una regla');
+    if (LEVELS.includes(puzzle)) assert.ok(TIERS.includes(puzzle.tier), 'nivel con grupo de dificultad');
 
     // Todos los morfemas que aparecen en el corpus están en el glosario...
     const corpusMorphemes = new Set();
     for (const sentence of puzzle.corpus) {
-      for (const word of Engine.tokenize(sentence.text)) {
-        const parts = Engine.segment(word, puzzle.glossary);
+      const words = Engine.tokenize(sentence.text);
+      const segmented = sentence.segmented ? Engine.tokenize(sentence.segmented) : [];
+      if (sentence.segmented) assert.equal(segmented.length, words.length, `segmentación de "${sentence.text}"`);
+      words.forEach((word, i) => {
+        const parts = corpusWordMorphemes(puzzle, word, segmented[i]);
         assert.ok(parts, `"${word}" del corpus no se puede analizar con el glosario`);
         parts.forEach((p) => corpusMorphemes.add(p));
-      }
+      });
     }
     // ...y todo el glosario aparece en el corpus.
     for (const morpheme of Object.keys(puzzle.glossary)) {
       assert.ok(corpusMorphemes.has(morpheme), `"${morpheme}" no aparece en ninguna frase de ejemplo`);
     }
 
-    for (const challenge of puzzle.challenges) {
-      assert.ok(['to-spanish', 'to-language'].includes(challenge.type));
-      assert.ok(challenge.answer.length > 0 && challenge.distractors.length > 0);
-      assert.ok(!challenge.answer.concat(challenge.distractors).some((w) => /\s/.test(w)), 'una palabra por ficha');
-      // Cada palabra de la lengua en el reto se compone de morfemas vistos en el corpus.
-      for (const word of languageWords(challenge)) {
-        const parts = Engine.segment(word, puzzle.glossary);
-        assert.ok(parts, `"${word}" del reto "${challenge.prompt}" no es deducible`);
-        parts.forEach((p) => assert.ok(corpusMorphemes.has(p), `"${p}" no aparece en el corpus`));
-      }
-      // Los distractores en la lengua deben ser palabras posibles, para que no se delaten solos.
-      if (challenge.type === 'to-language') {
-        for (const word of challenge.distractors) {
-          assert.ok(Engine.segment(word, puzzle.glossary), `distractor "${word}" no es una palabra posible`);
+    // Cada palabra de la lengua en un reto se compone de morfemas vistos en el corpus.
+    const assertDeducible = (word, where) => {
+      const parts = Engine.segment(word, puzzle.glossary);
+      assert.ok(parts, `"${word}" de ${where} no es deducible`);
+      parts.forEach((p) => assert.ok(corpusMorphemes.has(p), `"${p}" (${where}) no aparece en el corpus`));
+    };
+
+    puzzle.challenges.forEach((challenge, index) => {
+      const where = `reto ${index + 1}`;
+      switch (challenge.type) {
+        case 'match':
+          assert.equal(index, 0, 'el reto de emparejar va primero');
+          assert.ok(puzzle.scrambled, 'emparejar requiere scrambled: true');
+          assert.equal(new Set(puzzle.corpus.map((c) => c.translation)).size, puzzle.corpus.length, 'traducciones distintas');
+          break;
+        case 'choice':
+          assert.ok(challenge.prompt && challenge.options.length >= 2);
+          assert.ok(challenge.correct >= 0 && challenge.correct < challenge.options.length);
+          if (challenge.optionsLanguage) {
+            challenge.options.forEach((o) => Engine.tokenize(o).forEach((w) => assertDeducible(w, where)));
+          }
+          break;
+        case 'to-spanish':
+        case 'to-language': {
+          const tiles = challenge.answer.concat(challenge.distractors);
+          assert.ok(challenge.answer.length > 0 && challenge.distractors.length > 0);
+          assert.ok(!tiles.some((w) => /\s/.test(w)), 'una palabra por ficha');
+          if (challenge.type === 'to-spanish') {
+            Engine.tokenize(challenge.prompt).forEach((w) => assertDeducible(w, where));
+          } else if (challenge.morphemes) {
+            // Las fichas son morfemas del glosario; las de la respuesta, vistas en el corpus.
+            tiles.forEach((m) => assert.ok(m in puzzle.glossary, `ficha "${m}" (${where}) no está en el glosario`));
+            challenge.answer.forEach((m) => assert.ok(corpusMorphemes.has(m), `"${m}" (${where}) no aparece en el corpus`));
+          } else {
+            challenge.answer.forEach((w) => assertDeducible(w, where));
+            // Los distractores deben ser palabras posibles, para que no se delaten solos.
+            challenge.distractors.forEach((w) => assert.ok(Engine.segment(w, puzzle.glossary), `distractor "${w}" no es una palabra posible`));
+          }
+          break;
         }
+        default:
+          assert.fail(`tipo de reto desconocido: ${challenge.type}`);
       }
-    }
+    });
 
     // El puzzle completo se puede resolver con 3 estrellas.
     const state = Engine.newState(puzzle);
-    puzzle.challenges.forEach((c, i) => Engine.submitAttempt(puzzle, state, i, c.answer));
+    puzzle.challenges.forEach((_, i) => Engine.submitAttempt(puzzle, state, i, Engine.challengeAnswer(puzzle, i)));
     assert.equal(Engine.computeStars(state), 3);
   });
 }
@@ -207,4 +245,102 @@ test('currentStreak se pierde al saltarse un día', () => {
   assert.equal(Engine.currentStreak(stats, 2), 2);
   assert.equal(Engine.currentStreak(stats, 3), 2);
   assert.equal(Engine.currentStreak(stats, 4), 0);
+});
+
+// ---------- Retos avanzados ----------
+
+test('joinMorphemes pega prefijos y sufijos a su raíz', () => {
+  assert.equal(Engine.joinMorphemes(['tama', 'a-', 'mi-', 'sal', '-o']), 'tama amisalo');
+  assert.equal(Engine.joinMorphemes(['tolu', '-lar', 'seki', '-ler', '-de', 'ote']), 'tolular sekilerde ote');
+});
+
+test('parseSegmented y glossSentence analizan frases con guiones', () => {
+  const ikoa = LEVELS.find((p) => p.id === 'ikoa');
+  assert.deepEqual(Engine.parseSegmented('ni-ti-sal-e', ikoa.glossary), ['ni-', 'ti-', 'sal', '-e']);
+  assert.equal(Engine.parseSegmented('ni-xx-sal', ikoa.glossary), null);
+  assert.deepEqual(Engine.glossSentence('tama ni-u-pak-o', ikoa.glossary), [
+    { form: 'tama', gloss: 'padre' },
+    { form: 'ni-u-pak-o', gloss: 'yo-a él/ella-ayudar-pasado' },
+  ]);
+});
+
+test('segment reconoce prefijos', () => {
+  const ntaba = LEVELS.find((p) => p.id === 'ntaba');
+  assert.deepEqual(Engine.segment('bakana', ntaba.glossary), ['ba-', 'kana']);
+});
+
+test('un intento de longitud distinta avisa de que faltan o sobran piezas', () => {
+  const ankor = LEVELS.find((p) => p.id === 'ankor');
+  const state = Engine.newState(ankor);
+  assert.equal(Engine.submitAttempt(ankor, state, 2, ['tam', '-ne', 'nuk', '-u']).lengthHint, 'long');
+  assert.equal(Engine.submitAttempt(ankor, state, 2, ['tam', 'nuk']).lengthHint, 'short');
+  assert.equal(Engine.submitAttempt(ankor, state, 2, ['tam', 'nuk', '-u']).status, 'solved');
+});
+
+test('las alternativas también se aceptan como respuesta', () => {
+  const puzzle = {
+    id: 'prueba',
+    corpus: [],
+    challenges: [{ type: 'to-language', answer: ['a', 'b'], alternatives: [['b', 'a']], distractors: ['c'] }],
+  };
+  const state = Engine.newState(puzzle);
+  assert.equal(Engine.submitAttempt(puzzle, state, 0, ['b', 'a']).status, 'solved');
+});
+
+test('las preguntas de opción múltiple tienen 2 intentos', () => {
+  const sulpa = LEVELS.find((p) => p.id === 'sulpa');
+  const state = Engine.newState(sulpa);
+  Engine.submitAttempt(sulpa, state, 3, ['1']);
+  assert.equal(Engine.submitAttempt(sulpa, state, 3, ['2']).status, 'failed');
+});
+
+test('emparejar: traducciones desordenadas y retos bloqueados hasta terminar', () => {
+  const senka = LEVELS.find((p) => p.id === 'senka');
+  const order = Engine.scrambledOrder(senka);
+  assert.deepEqual(order.slice().sort(), senka.corpus.map((_, i) => i));
+  assert.ok(order.every((v, i) => v !== i), 'ninguna traducción en su sitio');
+  const state = Engine.newState(senka);
+  assert.ok(Engine.isLocked(senka, state, 1));
+  assert.equal(Engine.corpusRevealed(senka, state), false);
+  assert.throws(() => Engine.submitAttempt(senka, state, 1, ['0']));
+  const answer = Engine.challengeAnswer(senka, 0);
+  const result = Engine.submitAttempt(senka, state, 0, answer);
+  assert.equal(result.status, 'solved');
+  assert.equal(Engine.isLocked(senka, state, 1), false);
+  assert.equal(Engine.corpusRevealed(senka, state), true);
+  // Cada letra apunta a la traducción correcta.
+  answer.forEach((l, i) => assert.equal(senka.corpus[order[l.charCodeAt(0) - 65]].translation, senka.corpus[i].translation));
+});
+
+test('emparejar marca cada fila acertada o fallada', () => {
+  const tavaki = LEVELS.find((p) => p.id === 'tavaki');
+  const answer = Engine.challengeAnswer(tavaki, 0);
+  const guess = answer.slice();
+  [guess[0], guess[1]] = [guess[1], guess[0]];
+  const { feedback } = Engine.evaluate(tavaki, 0, guess);
+  assert.deepEqual(feedback.slice(0, 3), ['absent', 'absent', 'correct']);
+});
+
+// ---------- Aprende ----------
+
+const ARTICLES = require('../js/learn.js');
+
+test('los artículos de Aprende están completos', () => {
+  const ids = ARTICLES.map((a) => a.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const a of ARTICLES) {
+    assert.ok(/^[a-z-]+$/.test(a.id), `id "${a.id}" válido para un enlace`);
+    assert.ok(a.title && a.summary && a.paragraphs.length && a.examples.length && a.languages.length);
+    for (const ex of a.examples) {
+      assert.ok(ex.language && ex.translation);
+      ex.words.forEach((w) => assert.equal(w.length, 2, `ejemplo de ${a.id}: [forma, glosa]`));
+    }
+  }
+});
+
+test('cada tema de los puzzles tiene su artículo', () => {
+  const ids = new Set(ARTICLES.map((a) => a.id));
+  for (const puzzle of ALL_PUZZLES) {
+    for (const topic of puzzle.topics || []) assert.ok(ids.has(topic), `${puzzle.id}: tema "${topic}" sin artículo`);
+  }
 });

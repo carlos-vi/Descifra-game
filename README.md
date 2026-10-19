@@ -14,7 +14,12 @@ Abre `index.html` en el navegador. No necesita instalación ni servidor.
   «Descifra #N». Se juega una vez al día; al terminar se puede copiar el resultado para
   compartirlo sin desvelar la solución, y se guardan la racha y las estadísticas.
   Los puzzles salen de `js/daily-puzzles.js` y se repiten cuando se acaba el banco.
-- **Niveles de práctica**: 5 lenguas de dificultad creciente que se pueden reiniciar.
+- **Niveles**: 12 lenguas en cuatro grupos de dificultad (Iniciación, Intermedio,
+  Avanzado y Olimpiada) que se pueden reiniciar. Los avanzados usan fichas de piezas
+  sueltas («ni-», «-ne»), preguntas de opción múltiple y, en Olimpiada, traducciones
+  desordenadas que primero hay que emparejar.
+- **Aprende** (`#aprende`): artículos sobre los fenómenos gramaticales de los niveles
+  (ergatividad, clases nominales, evidencialidad…) con ejemplos de lenguas reales.
 
 ## Cómo funciona
 
@@ -31,6 +36,7 @@ css/style.css
 js/engine.js     lógica del juego (sin DOM, probada con Node)
 js/puzzles.js    niveles de práctica y explicación del formato de los puzzles
 js/daily-puzzles.js  banco de puzzles del reto diario
+js/learn.js      artículos de la sección Aprende
 js/ui.js         interfaz
 tests/           tests automáticos
 ```

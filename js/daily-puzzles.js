@@ -6,6 +6,7 @@
   const DAILY_PUZZLES = [
     {
       id: 'diario-veru',
+      topics: ['orden'],
       title: 'La acción primero',
       language: 'veru',
       intro: 'En veru las frases empiezan de una forma poco habitual.',
@@ -50,6 +51,7 @@
     },
     {
       id: 'diario-amara',
+      topics: ['aglutinacion'],
       title: 'Decir que no',
       language: 'amara',
       intro: 'Un vecino amara describe lo que hacen (y lo que no hacen) sus animales.',
@@ -93,6 +95,7 @@
     },
     {
       id: 'diario-tesh',
+      topics: ['posesion'],
       title: '¿De quién es?',
       language: 'tesh',
       intro: 'En tesh no hace falta decir «es», pero sí indicar a quién pertenece cada cosa.',
@@ -139,6 +142,7 @@
     },
     {
       id: 'diario-nuvi',
+      topics: ['polipersonal'],
       title: 'Yo, tú y él',
       language: 'nuvi',
       intro: 'En nuvi no se dicen «yo» ni «tú»: el verbo ya lo indica.',
@@ -184,6 +188,7 @@
     },
     {
       id: 'diario-korra',
+      topics: ['aglutinacion'],
       title: 'Dónde ocurre',
       language: 'korra',
       intro: 'Los korra indican el lugar de una forma muy compacta.',
@@ -230,6 +235,7 @@
     },
     {
       id: 'diario-lomba',
+      topics: ['numeros'],
       title: 'Contar con la mano',
       language: 'lomba',
       intro: 'Los lomba cuentan usando la mano. Descubre cómo forman los números.',
@@ -277,6 +283,7 @@
     },
     {
       id: 'diario-sumu',
+      topics: ['orden'],
       title: 'Orden libre',
       language: 'sumu',
       intro: 'En sumu las palabras se pueden mover, pero algo indica quién recibe la acción.',

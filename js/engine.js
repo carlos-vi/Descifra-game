@@ -31,6 +31,46 @@
     return out;
   }
 
+  // Tipos de reto:
+  // - "to-spanish" / "to-language": construir la traducción con fichas. Con
+  //   morphemes: true las fichas son raíces y afijos ("tam", "-ne", "ni-").
+  // - "match": emparejar las frases del corpus con sus traducciones desordenadas.
+  // - "choice": elegir una opción (una regla, o la frase incorrecta).
+  const POSITIONAL_TYPES = ['match', 'choice'];
+
+  // Orden en que se muestran las traducciones de un corpus desordenado.
+  function scrambledOrder(puzzle) {
+    const indices = puzzle.corpus.map((_, i) => i);
+    let order = shuffle(indices, puzzle.id + ':corpus');
+    // Que ninguna traducción quede en su sitio original.
+    let attempt = 0;
+    while (order.some((v, i) => v === i) && attempt < 50) {
+      attempt++;
+      order = shuffle(indices, puzzle.id + ':corpus:' + attempt);
+    }
+    return order;
+  }
+
+  function letter(position) {
+    return String.fromCharCode(65 + position);
+  }
+
+  // Respuesta de un reto como lista de fichas.
+  function challengeAnswer(puzzle, index) {
+    const challenge = puzzle.challenges[index];
+    if (challenge.type === 'match') {
+      const order = scrambledOrder(puzzle);
+      return puzzle.corpus.map((_, i) => letter(order.indexOf(i)));
+    }
+    if (challenge.type === 'choice') return [String(challenge.correct)];
+    return challenge.answer;
+  }
+
+  function maxAttempts(challenge) {
+    if (challenge.maxAttempts) return challenge.maxAttempts;
+    return challenge.type === 'choice' ? 2 : MAX_ATTEMPTS;
+  }
+
   function buildTiles(puzzle, index) {
     const challenge = puzzle.challenges[index];
     return shuffle(challenge.answer.concat(challenge.distractors), puzzle.id + ':' + index);
@@ -38,6 +78,21 @@
 
   function tokenize(text) {
     return text.trim().split(/\s+/).filter(Boolean);
+  }
+
+  // Une fichas de morfemas en palabras: "ni-" se pega a la siguiente y "-ne" a la anterior.
+  function joinMorphemes(pieces) {
+    let text = '';
+    let glueNext = true;
+    pieces.forEach((piece) => {
+      const isSuffix = piece.length > 1 && piece.startsWith('-');
+      const isPrefix = piece.length > 1 && piece.endsWith('-');
+      const bare = piece.replace(/^-|-$/g, '');
+      if (text && !isSuffix && !glueNext) text += ' ';
+      text += bare;
+      glueNext = isPrefix;
+    });
+    return text;
   }
 
   // Corrección al estilo Wordle: "correct" (sitio correcto), "present"
@@ -61,8 +116,35 @@
     return result;
   }
 
+  function scorePositional(guess, answer) {
+    return guess.map((w, i) => (w === answer[i] ? 'correct' : 'absent'));
+  }
+
   function isCorrect(guess, answer) {
     return guess.length === answer.length && guess.every((w, i) => w === answer[i]);
+  }
+
+  // Respuestas aceptadas: la principal y las alternativas (orden libre, etc.).
+  function acceptedAnswers(puzzle, index) {
+    return [challengeAnswer(puzzle, index)].concat(puzzle.challenges[index].alternatives || []);
+  }
+
+  // Evalúa un intento contra la respuesta aceptada más parecida.
+  function evaluate(puzzle, index, guess) {
+    const challenge = puzzle.challenges[index];
+    const score = POSITIONAL_TYPES.includes(challenge.type) ? scorePositional : scoreAttempt;
+    let best = null;
+    for (const answer of acceptedAnswers(puzzle, index)) {
+      const feedback = score(guess, answer);
+      const hits = feedback.filter((f) => f === 'correct').length;
+      const correct = isCorrect(guess, answer);
+      if (!best || correct || (!best.correct && hits > best.hits)) {
+        best = { feedback, hits, correct, length: answer.length };
+      }
+      if (correct) break;
+    }
+    const lengthHint = best.correct ? null : guess.length < best.length ? 'short' : guess.length > best.length ? 'long' : null;
+    return { feedback: best.feedback, correct: best.correct, lengthHint };
   }
 
   function newState(puzzle) {
@@ -72,6 +154,7 @@
       revealedWords: [],
       revealedRules: 0,
       notebook: {},
+      notes: '',
     };
   }
 
@@ -81,15 +164,29 @@
     if (progress.status !== 'playing') {
       throw new Error('Este reto ya está terminado');
     }
-    const feedback = scoreAttempt(guess, challenge.answer);
-    const correct = isCorrect(guess, challenge.answer);
-    progress.attempts.push({ guess: guess.slice(), feedback, correct });
+    if (isLocked(puzzle, state, index)) {
+      throw new Error('Primero hay que emparejar las traducciones');
+    }
+    const { feedback, correct, lengthHint } = evaluate(puzzle, index, guess);
+    progress.attempts.push({ guess: guess.slice(), feedback, correct, lengthHint });
     if (correct) {
       progress.status = 'solved';
-    } else if (progress.attempts.length >= MAX_ATTEMPTS) {
+    } else if (progress.attempts.length >= maxAttempts(challenge)) {
       progress.status = 'failed';
     }
-    return { feedback, status: progress.status };
+    return { feedback, status: progress.status, lengthHint };
+  }
+
+  // En los corpus desordenados, los demás retos esperan a que se emparejen las traducciones.
+  function isLocked(puzzle, state, index) {
+    const first = puzzle.challenges[0];
+    return index > 0 && first.type === 'match' && state.challenges[0].status === 'playing';
+  }
+
+  // Las traducciones del corpus se ven emparejadas cuando no hay reto de emparejar
+  // o cuando ese reto ya ha terminado.
+  function corpusRevealed(puzzle, state) {
+    return !puzzle.scrambled || state.challenges[0].status !== 'playing';
   }
 
   function glossaryKeys(puzzle) {
@@ -134,19 +231,52 @@
     return 1;
   }
 
-  // Divide una palabra de la lengua en raíz + sufijos del glosario.
+  function hasKey(glossary, key) {
+    return Object.prototype.hasOwnProperty.call(glossary, key);
+  }
+
+  // Divide una palabra de la lengua en prefijos + raíz + sufijos del glosario.
   // Devuelve la lista de morfemas o null si no se puede.
   function segment(word, glossary) {
-    const suffixes = Object.keys(glossary).filter((k) => k.startsWith('-'));
-    if (Object.prototype.hasOwnProperty.call(glossary, word)) return [word];
-    for (const suffix of suffixes) {
+    if (hasKey(glossary, word)) return [word];
+    const keys = Object.keys(glossary);
+    for (const suffix of keys.filter((k) => k.length > 1 && k.startsWith('-'))) {
       const bare = suffix.slice(1);
       if (word.length > bare.length && word.endsWith(bare)) {
         const rest = segment(word.slice(0, -bare.length), glossary);
         if (rest) return rest.concat(suffix);
       }
     }
+    for (const prefix of keys.filter((k) => k.length > 1 && k.endsWith('-'))) {
+      const bare = prefix.slice(0, -1);
+      if (word.length > bare.length && word.startsWith(bare)) {
+        const rest = segment(word.slice(bare.length), glossary);
+        if (rest) return [prefix].concat(rest);
+      }
+    }
     return null;
+  }
+
+  // Interpreta una palabra ya segmentada con guiones ("ni-ti-sal-e"): la raíz va
+  // sin guiones, los prefijos antes y los sufijos después. Devuelve null si algún
+  // trozo no está en el glosario.
+  function parseSegmented(word, glossary) {
+    const parts = word.split('-');
+    const rootIndex = parts.findIndex((p) => hasKey(glossary, p));
+    if (rootIndex === -1) return null;
+    const morphemes = parts.map((p, i) => (i < rootIndex ? p + '-' : i > rootIndex ? '-' + p : p));
+    return morphemes.every((m) => hasKey(glossary, m)) ? morphemes : null;
+  }
+
+  // Glosa de una frase segmentada: [{ form: 'tam-ne', gloss: 'hombre-agente' }, ...]
+  function glossSentence(segmented, glossary) {
+    return tokenize(segmented).map((word) => {
+      const morphemes = parseSegmented(word, glossary) || [word];
+      return {
+        form: word,
+        gloss: morphemes.map((m) => glossary[m] || '?').join('-'),
+      };
+    });
   }
 
   // ---------- Reto diario ----------
@@ -207,6 +337,16 @@
 
   const Engine = {
     MAX_ATTEMPTS,
+    scrambledOrder,
+    letter,
+    challengeAnswer,
+    maxAttempts,
+    joinMorphemes,
+    evaluate,
+    isLocked,
+    corpusRevealed,
+    parseSegmented,
+    glossSentence,
     dayNumber,
     dailyPuzzle,
     msUntilNextDay,
